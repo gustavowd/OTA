@@ -122,7 +122,7 @@ void DHCP_Thread(void *argument) {
     		if (dhcp_supplied_address(&gnetif)) {
     			watchdog_cnt = 0;
     			DHCP_State = DHCP_DONE;
-    			dhcp_stop(&gnetif);
+    			//dhcp_stop(&gnetif);
     			if (first_connection){
     				first_connection = 0;
     				xSemaphoreGive(sem_connected);

@@ -51,24 +51,33 @@
 
 /* Private variables ---------------------------------------------------------*/
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-  #pragma data_alignment=4   
+
+#pragma location=0x2000E000
+__no_init ETH_DMADescTypeDef DMARxDscrTab[ETH_RXBUFNB];/* Ethernet Rx MA Descriptor */
+#pragma location=0x2000E100
+__no_init ETH_DMADescTypeDef DMATxDscrTab[ETH_TXBUFNB];/* Ethernet Tx DMA Descriptor */
+#elif defined ( __CC_ARM )
+ETH_DMADescTypeDef DMARxDscrTab[ETH_RXBUFNB] __attribute__((at(0x2000E000)));/* Ethernet Rx MA Descriptor */
+ETH_DMADescTypeDef DMATxDscrTab[ETH_TXBUFNB] __attribute__((at(0x2000E100)));/* Ethernet Tx DMA Descriptor */
+#elif defined ( __GNUC__ )
+ETH_DMADescTypeDef DMARxDscrTab[ETH_RXBUFNB] __attribute__((section(".RxDecripSection")));/* Ethernet Rx MA Descriptor */
+ETH_DMADescTypeDef DMATxDscrTab[ETH_TXBUFNB] __attribute__((section(".TxDescripSection")));/* Ethernet Tx DMA Descriptor */
 #endif
-__ALIGN_BEGIN ETH_DMADescTypeDef  DMARxDscrTab[ETH_RXBUFNB] __ALIGN_END;/* Ethernet Rx MA Descriptor */
 
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
-  #pragma data_alignment=4   
+#pragma location=0x2000E200
+__no_init
+__IO uint32_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE/4]; /* Ethernet Receive Buffer */
+#pragma location=0x2000FFC4
+__no_init
+__IO uint32_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE/4]; /* Ethernet Transmit Buffer */
+#elif defined ( __CC_ARM )
+__IO uint32_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE/4] __attribute__((at(0x2000E200))); /* Ethernet Receive Buffer */
+__IO uint32_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE/4] __attribute__((at(0x2000FFC4))); /* Ethernet Transmit Buffer */
+#elif defined ( __GNUC__ )
+__IO uint32_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE/4] __attribute__((section(".RxBUF")));/* Ethernet Receive Buffer */
+__IO uint32_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE/4] __attribute__((section(".TxBUF")));/* Ethernet Transmit Buffer */
 #endif
-__ALIGN_BEGIN ETH_DMADescTypeDef  DMATxDscrTab[ETH_TXBUFNB] __ALIGN_END;/* Ethernet Tx DMA Descriptor */
-
-#if defined ( __ICCARM__ ) /*!< IAR Compiler */
-  #pragma data_alignment=4   
-#endif
-__ALIGN_BEGIN uint8_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __ALIGN_END; /* Ethernet Receive Buffer */
-
-#if defined ( __ICCARM__ ) /*!< IAR Compiler */
-  #pragma data_alignment=4   
-#endif
-__ALIGN_BEGIN uint8_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __ALIGN_END; /* Ethernet Transmit Buffer */
 
 /* USER CODE BEGIN 2 */
 
@@ -93,8 +102,6 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* ethHandle)
   /* USER CODE BEGIN ETH_MspInit 0 */
 
   /* USER CODE END ETH_MspInit 0 */
-    /* Enable Peripheral clock */
-    __HAL_RCC_ETH_CLK_ENABLE();
   
     __HAL_RCC_GPIOG_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -134,6 +141,9 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* ethHandle)
     /* Peripheral interrupt init */
     HAL_NVIC_SetPriority(ETH_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(ETH_IRQn);
+
+    /* Enable Peripheral clock */
+    __HAL_RCC_ETH_CLK_ENABLE();
   /* USER CODE BEGIN ETH_MspInit 1 */
 
   /* USER CODE END ETH_MspInit 1 */
@@ -214,6 +224,7 @@ static void low_level_init(struct netif *netif)
   heth.Instance = ETH;
   heth.Init.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE;
   heth.Init.PhyAddress = LAN8742A_PHY_ADDRESS;
+  heth.Init.Speed = ETH_SPEED_100M;
   MACAddr[0] = 0x00;
   MACAddr[1] = 0x80;
   MACAddr[2] = 0xE1;
@@ -223,6 +234,7 @@ static void low_level_init(struct netif *netif)
   heth.Init.MACAddr = &MACAddr[0];
   heth.Init.RxMode = ETH_RXINTERRUPT_MODE;
   heth.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
+  heth.Init.DuplexMode = ETH_MODE_FULLDUPLEX;
   heth.Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
 
   /* USER CODE BEGIN MACADDRESS */
@@ -286,14 +298,14 @@ static void low_level_init(struct netif *netif)
   
 
   /* Read Register Configuration */
-  HAL_ETH_ReadPHYRegister(&heth, PHY_ISFR, &regvalue);
-  regvalue |= (PHY_ISFR_INT4);
+  //HAL_ETH_ReadPHYRegister(&heth, PHY_ISFR, &regvalue);
+  //regvalue |= (PHY_ISFR_INT4);
 
   /* Enable Interrupt on change of link status */ 
-  HAL_ETH_WritePHYRegister(&heth, PHY_ISFR , regvalue );
+  //HAL_ETH_WritePHYRegister(&heth, PHY_ISFR , regvalue );
   
   /* Read Register Configuration */
-  HAL_ETH_ReadPHYRegister(&heth, PHY_ISFR , &regvalue);
+  //HAL_ETH_ReadPHYRegister(&heth, PHY_ISFR , &regvalue);
 
 /* USER CODE BEGIN PHY_POST_CONFIG */ 
     

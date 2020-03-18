@@ -140,8 +140,10 @@ int mbedtls_platform_set_calloc_free( void * (*calloc_func)( size_t, size_t ),
                               void (*free_func)( void * ) );
 #endif /* MBEDTLS_PLATFORM_FREE_MACRO && MBEDTLS_PLATFORM_CALLOC_MACRO */
 #else /* !MBEDTLS_PLATFORM_MEMORY */
-#define mbedtls_free       free
-#define mbedtls_calloc     calloc
+void *vPortCalloc( size_t num, size_t item_size );
+void vPortFree( void *pv );
+#define mbedtls_free       vPortFree
+#define mbedtls_calloc     vPortCalloc
 #endif /* MBEDTLS_PLATFORM_MEMORY && !MBEDTLS_PLATFORM_{FREE,CALLOC}_MACRO */
 
 /*

@@ -128,6 +128,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
+#include "cmsis_os.h"
 
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{
@@ -334,7 +335,7 @@ HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth)
   }
   
   /* Delay to assure PHY reset */
-  HAL_Delay(PHY_RESET_DELAY);
+  osDelay(PHY_RESET_DELAY);
   
   if((heth->Init).AutoNegotiation != ETH_AUTONEGOTIATION_DISABLE)
   {
@@ -471,7 +472,7 @@ HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth)
     }  
     
     /* Delay to assure PHY configuration */
-    HAL_Delay(PHY_CONFIG_DELAY);
+    osDelay(PHY_CONFIG_DELAY);
   }
   
   /* Config MAC and DMA */
@@ -1341,6 +1342,8 @@ HAL_StatusTypeDef HAL_ETH_ReadPHYRegister(ETH_HandleTypeDef *heth, uint16_t PHYR
       return HAL_TIMEOUT;
     }
     
+    osDelay(1);
+
     tmpreg = heth->Instance->MACMIIAR;
   }
   
@@ -1606,7 +1609,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef 
     /* Wait until the write operation will be taken into account :
     at least four TX_CLK/RX_CLK clock cycles */
     tmpreg = (heth->Instance)->MACCR;
-    HAL_Delay(ETH_REG_WRITE_DELAY);
+    osDelay(ETH_REG_WRITE_DELAY);
     (heth->Instance)->MACCR = tmpreg; 
     
     /*----------------------- ETHERNET MACFFR Configuration --------------------*/ 
@@ -1623,7 +1626,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef 
      /* Wait until the write operation will be taken into account :
      at least four TX_CLK/RX_CLK clock cycles */
      tmpreg = (heth->Instance)->MACFFR;
-     HAL_Delay(ETH_REG_WRITE_DELAY);
+     osDelay(ETH_REG_WRITE_DELAY);
      (heth->Instance)->MACFFR = tmpreg;
      
      /*--------------- ETHERNET MACHTHR and MACHTLR Configuration ---------------*/
@@ -1652,7 +1655,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef 
      /* Wait until the write operation will be taken into account :
      at least four TX_CLK/RX_CLK clock cycles */
      tmpreg = (heth->Instance)->MACFCR;
-     HAL_Delay(ETH_REG_WRITE_DELAY);
+     osDelay(ETH_REG_WRITE_DELAY);
      (heth->Instance)->MACFCR = tmpreg;
      
      /*----------------------- ETHERNET MACVLANTR Configuration -----------------*/
@@ -1662,7 +1665,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef 
       /* Wait until the write operation will be taken into account :
       at least four TX_CLK/RX_CLK clock cycles */
       tmpreg = (heth->Instance)->MACVLANTR;
-      HAL_Delay(ETH_REG_WRITE_DELAY);
+      osDelay(ETH_REG_WRITE_DELAY);
       (heth->Instance)->MACVLANTR = tmpreg;
   }
   else /* macconf == NULL : here we just configure Speed and Duplex mode */
@@ -1682,7 +1685,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef 
     /* Wait until the write operation will be taken into account:
     at least four TX_CLK/RX_CLK clock cycles */
     tmpreg = (heth->Instance)->MACCR;
-    HAL_Delay(ETH_REG_WRITE_DELAY);
+    osDelay(ETH_REG_WRITE_DELAY);
     (heth->Instance)->MACCR = tmpreg;
   }
   
@@ -1753,7 +1756,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigDMA(ETH_HandleTypeDef *heth, ETH_DMAInitTypeDef 
   /* Wait until the write operation will be taken into account:
   at least four TX_CLK/RX_CLK clock cycles */
   tmpreg = (heth->Instance)->DMAOMR;
-  HAL_Delay(ETH_REG_WRITE_DELAY);
+  osDelay(ETH_REG_WRITE_DELAY);
   (heth->Instance)->DMAOMR = tmpreg;
 
   /*----------------------- ETHERNET DMABMR Configuration --------------------*/
@@ -1769,7 +1772,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigDMA(ETH_HandleTypeDef *heth, ETH_DMAInitTypeDef 
    /* Wait until the write operation will be taken into account:
       at least four TX_CLK/RX_CLK clock cycles */
    tmpreg = (heth->Instance)->DMABMR;
-   HAL_Delay(ETH_REG_WRITE_DELAY);
+   osDelay(ETH_REG_WRITE_DELAY);
    (heth->Instance)->DMABMR = tmpreg;
 
    /* Set the ETH state to Ready */
@@ -1926,7 +1929,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
   /* Wait until the write operation will be taken into account:
      at least four TX_CLK/RX_CLK clock cycles */
   tmpreg = (heth->Instance)->MACCR;
-  HAL_Delay(ETH_REG_WRITE_DELAY);
+  osDelay(ETH_REG_WRITE_DELAY);
   (heth->Instance)->MACCR = tmpreg; 
   
   /*----------------------- ETHERNET MACFFR Configuration --------------------*/ 
@@ -1951,7 +1954,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
    /* Wait until the write operation will be taken into account:
       at least four TX_CLK/RX_CLK clock cycles */
    tmpreg = (heth->Instance)->MACFFR;
-   HAL_Delay(ETH_REG_WRITE_DELAY);
+   osDelay(ETH_REG_WRITE_DELAY);
    (heth->Instance)->MACFFR = tmpreg;
    
    /*--------------- ETHERNET MACHTHR and MACHTLR Configuration --------------*/
@@ -1986,7 +1989,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
    /* Wait until the write operation will be taken into account:
    at least four TX_CLK/RX_CLK clock cycles */
    tmpreg = (heth->Instance)->MACFCR;
-   HAL_Delay(ETH_REG_WRITE_DELAY);
+   osDelay(ETH_REG_WRITE_DELAY);
    (heth->Instance)->MACFCR = tmpreg;
    
    /*----------------------- ETHERNET MACVLANTR Configuration ----------------*/
@@ -1998,7 +2001,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
     /* Wait until the write operation will be taken into account:
        at least four TX_CLK/RX_CLK clock cycles */
     tmpreg = (heth->Instance)->MACVLANTR;
-    HAL_Delay(ETH_REG_WRITE_DELAY);
+    osDelay(ETH_REG_WRITE_DELAY);
     (heth->Instance)->MACVLANTR = tmpreg;
     
     /* Ethernet DMA default initialization ************************************/
@@ -2049,7 +2052,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
     /* Wait until the write operation will be taken into account:
        at least four TX_CLK/RX_CLK clock cycles */
     tmpreg = (heth->Instance)->DMAOMR;
-    HAL_Delay(ETH_REG_WRITE_DELAY);
+    osDelay(ETH_REG_WRITE_DELAY);
     (heth->Instance)->DMAOMR = tmpreg;
     
     /*----------------------- ETHERNET DMABMR Configuration ------------------*/
@@ -2072,7 +2075,7 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
      /* Wait until the write operation will be taken into account:
         at least four TX_CLK/RX_CLK clock cycles */
      tmpreg = (heth->Instance)->DMABMR;
-     HAL_Delay(ETH_REG_WRITE_DELAY);
+     osDelay(ETH_REG_WRITE_DELAY);
      (heth->Instance)->DMABMR = tmpreg;
 
      if((heth->Init).RxMode == ETH_RXINTERRUPT_MODE)
@@ -2132,7 +2135,7 @@ static void ETH_MACTransmissionEnable(ETH_HandleTypeDef *heth)
   /* Wait until the write operation will be taken into account:
      at least four TX_CLK/RX_CLK clock cycles */
   tmpreg = (heth->Instance)->MACCR;
-  HAL_Delay(ETH_REG_WRITE_DELAY);
+  osDelay(ETH_REG_WRITE_DELAY);
   (heth->Instance)->MACCR = tmpreg;
 }
 
@@ -2152,7 +2155,7 @@ static void ETH_MACTransmissionDisable(ETH_HandleTypeDef *heth)
   /* Wait until the write operation will be taken into account:
      at least four TX_CLK/RX_CLK clock cycles */
   tmpreg = (heth->Instance)->MACCR;
-  HAL_Delay(ETH_REG_WRITE_DELAY);
+  osDelay(ETH_REG_WRITE_DELAY);
   (heth->Instance)->MACCR = tmpreg;
 }
 
@@ -2172,7 +2175,7 @@ static void ETH_MACReceptionEnable(ETH_HandleTypeDef *heth)
   /* Wait until the write operation will be taken into account:
      at least four TX_CLK/RX_CLK clock cycles */
   tmpreg = (heth->Instance)->MACCR;
-  HAL_Delay(ETH_REG_WRITE_DELAY);
+  osDelay(ETH_REG_WRITE_DELAY);
   (heth->Instance)->MACCR = tmpreg;
 }
 
@@ -2192,7 +2195,7 @@ static void ETH_MACReceptionDisable(ETH_HandleTypeDef *heth)
   /* Wait until the write operation will be taken into account:
      at least four TX_CLK/RX_CLK clock cycles */
   tmpreg = (heth->Instance)->MACCR;
-  HAL_Delay(ETH_REG_WRITE_DELAY);
+  osDelay(ETH_REG_WRITE_DELAY);
   (heth->Instance)->MACCR = tmpreg;
 }
 
@@ -2260,7 +2263,7 @@ static void ETH_FlushTransmitFIFO(ETH_HandleTypeDef *heth)
   /* Wait until the write operation will be taken into account:
      at least four TX_CLK/RX_CLK clock cycles */
   tmpreg = (heth->Instance)->DMAOMR;
-  HAL_Delay(ETH_REG_WRITE_DELAY);
+  osDelay(ETH_REG_WRITE_DELAY);
   (heth->Instance)->DMAOMR = tmpreg;
 }
 

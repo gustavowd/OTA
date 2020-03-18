@@ -153,7 +153,7 @@ int main(void)
   const osThreadAttr_t TLSTask_attributes = {
     .name = "TLSTask",
     .priority = (osPriority_t) osPriorityHigh,
-    .stack_size = 3*256
+    .stack_size = 10*256
   };
   TLS_ThreadId = osThreadNew(SSL_Client, NULL, &TLSTask_attributes);
 

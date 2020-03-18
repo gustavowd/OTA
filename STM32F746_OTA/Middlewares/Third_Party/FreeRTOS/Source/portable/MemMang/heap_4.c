@@ -260,6 +260,17 @@ void *pvReturn = NULL;
 }
 /*-----------------------------------------------------------*/
 
+void *vPortCalloc( size_t num, size_t item_size ) {
+  void *ret;
+
+  ret = pvPortMalloc((size_t)(item_size * num));
+  if (ret){
+      memset(ret, 0x00, (size_t)(item_size * num));
+  }
+
+  return ret;
+}
+
 void vPortFree( void *pv )
 {
 uint8_t *puc = ( uint8_t * ) pv;
