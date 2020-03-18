@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "fatfs.h"
 #include "mbedtls.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -35,6 +36,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+osThreadId_t DHCP_ThreadId;
+osThreadId_t TLS_ThreadId;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -50,9 +53,13 @@ RNG_HandleTypeDef hrng;
 
 SD_HandleTypeDef hsd1;
 
+/* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
-osThreadId_t DHCP_ThreadId;
-osThreadId_t TLS_ThreadId;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -64,11 +71,10 @@ static void MX_CRC_Init(void);
 static void MX_RNG_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 void StartDefaultTask(void *argument);
-void DHCP_Thread(void const * argument);
-void SSL_Client(void const *argument);
 
 /* USER CODE BEGIN PFP */
-
+void DHCP_Thread(void *argument);
+void SSL_Client(void *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -85,7 +91,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -107,11 +112,14 @@ int main(void)
   MX_GPIO_Init();
   MX_CRC_Init();
   MX_RNG_Init();
-  //MX_SDMMC1_SD_Init();
+  MX_SDMMC1_SD_Init();
+  /* Up to user define the empty MX_MBEDTLS_Init() function located in mbedtls.c file */
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
   osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -131,14 +139,10 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  const osThreadAttr_t defaultTask_attributes = {
-    .name = "defaultTask",
-    .priority = (osPriority_t) osPriorityNormal,
-    .stack_size = 128
-  };
+  /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
+  /* USER CODE BEGIN RTOS_THREADS */
   const osThreadAttr_t DHCPTask_attributes = {
     .name = "DHCPTask",
     .priority = (osPriority_t) osPriorityAboveNormal,
@@ -153,15 +157,12 @@ int main(void)
   };
   TLS_ThreadId = osThreadNew(SSL_Client, NULL, &TLSTask_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
   /* Start scheduler */
   osKernelStart();
-  
+ 
   /* We should never get here as control is now taken by the scheduler */
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -308,14 +309,6 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
   hsd1.Init.ClockDiv = 0;
-  if (HAL_SD_Init(&hsd1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN SDMMC1_Init 2 */
 
   /* USER CODE END SDMMC1_Init 2 */
@@ -329,6 +322,7 @@ static void MX_SDMMC1_SD_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOG_CLK_ENABLE();
@@ -336,6 +330,12 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin : PG3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
 }
 
@@ -352,10 +352,6 @@ static void MX_GPIO_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* MX_LWIP_Init() is generated within mbedtls_net_init() function in net_cockets.c file */
-  /* Up to user to call mbedtls_net_init() function in MBEDTLS initialization step */
-
-  /* Up to user define the empty MX_MBEDTLS_Init() function located in mbedtls.c file */
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
@@ -363,6 +359,27 @@ void StartDefaultTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END 5 */ 
+}
+
+ /**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM1 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM1) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
 }
 
 /**

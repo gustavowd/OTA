@@ -86,8 +86,8 @@ static void Netif_Config(void)
 }
 
 extern volatile int reconnection_trigger;
-void low_level_reinit(struct netif *netif);
-void DHCP_Thread(void const * argument) {
+//void low_level_reinit(struct netif *netif);
+void DHCP_Thread(void *argument) {
 	uint32_t phyreg;
 	uint32_t watchdog_cnt = 0;
 	static int first_connection = 1;

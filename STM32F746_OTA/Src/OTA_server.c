@@ -162,7 +162,7 @@ exit:
 }
 
 volatile int reconnection_trigger = 0;
-void SSL_Client(void const *argument)
+void SSL_Client(void *argument)
 {
   /*
    * 0. Initialize the RNG and the session data
