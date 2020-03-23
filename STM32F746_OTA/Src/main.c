@@ -331,11 +331,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  /*Configure GPIO pin : PG3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 }
 
@@ -356,17 +356,20 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
 	unsigned int size = 0;
-	f_mount(&fatfs, SDPath, 0);
-
-	FRESULT res = f_open(&file, "teste.txt", FA_OPEN_EXISTING | FA_READ);
+	/* Terceiro argumento igual a 1 pede para montar agora o sistema de arquivos */
+	FRESULT res = f_mount(&fatfs, SDPath, 1);
 
 	if (res == FR_OK){
-		//uint32_t file_size = f_size(&file);
-		do{
-			f_read(&file, read_buffer, 512, &size);
-		}while(size != 0);
+		res = f_open(&file, "teste.txt", FA_OPEN_EXISTING | FA_READ);
 
-		f_close(&file);
+		if (res == FR_OK){
+			//uint32_t file_size = f_size(&file);
+			do{
+				f_read(&file, read_buffer, 512, &size);
+			}while(size != 0);
+
+			f_close(&file);
+		}
 	}
   /* Infinite loop */
   for(;;)
