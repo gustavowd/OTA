@@ -340,7 +340,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+FATFS fatfs;
+FIL file;
+uint8_t read_buffer[512];
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -353,6 +355,19 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+	unsigned int size = 0;
+	f_mount(&fatfs, SDPath, 0);
+
+	FRESULT res = f_open(&file, "teste.txt", FA_OPEN_EXISTING | FA_READ);
+
+	if (res == FR_OK){
+		//uint32_t file_size = f_size(&file);
+		do{
+			f_read(&file, read_buffer, 512, &size);
+		}while(size != 0);
+
+		f_close(&file);
+	}
   /* Infinite loop */
   for(;;)
   {
