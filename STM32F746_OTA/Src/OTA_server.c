@@ -20,6 +20,8 @@
 #include "task.h"
 #include "tls_client_utils.h"
 
+#include "driver_uart.h"
+
 #define AUTH_SERVER "intranet.pb.utfpr.edu.br"
 #define AUTH_PORT 443
 #define AUTH_SERVER_LOOKUP_RETRIES 5
@@ -176,9 +178,29 @@ void SSL_Client(void *argument)
   sem_connected = xSemaphoreCreateBinary();
 
 
+  InitUART();
+  // Limpa a tela do terminal
+  UARTPutString("\033[2J\033[H",0);
+
+  // Imprime uma tela de boas-vindas
+  UARTPutString("Tarefa TLS de login iniciou!\n\r\n\r>>",34);
+
+  printf_install_putchar(UARTPutChar);
+
+  /*
+  int abc = 10;
+  printf_lib("Teste de printf %d", abc);
+
+  char data;
+  while(1){
+	  UARTGetChar(&data);
+	  UARTPutChar(data);
+	  if (data == 'q') break;
+  }
+  */
+
   xSemaphoreTake(sem_connected, portMAX_DELAY);
   utfpr_auth();
-
 
   while(1){
 	  vTaskDelay(10000);
