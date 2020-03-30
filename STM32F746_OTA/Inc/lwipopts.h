@@ -60,7 +60,7 @@
 /*----- Value in opt.h for LWIP_DNS_SECURE: (LWIP_DNS_SECURE_RAND_XID | LWIP_DNS_SECURE_NO_MULTIPLE_OUTSTANDING | LWIP_DNS_SECURE_RAND_SRC_PORT) -*/
 #define LWIP_DNS_SECURE 7
 /*----- Value in opt.h for TCP_SND_QUEUELEN: (4*TCP_SND_BUF + (TCP_MSS - 1))/TCP_MSS -----*/
-#define TCP_SND_QUEUELEN 9
+//#define TCP_SND_QUEUELEN 9
 /*----- Value in opt.h for TCP_SNDLOWAT: LWIP_MIN(LWIP_MAX(((TCP_SND_BUF)/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF) - 1) -*/
 #define TCP_SNDLOWAT 1071
 /*----- Value in opt.h for TCP_SNDQUEUELOWAT: LWIP_MAX(TCP_SND_QUEUELEN)/2, 5) -*/
@@ -115,6 +115,96 @@
 #define CHECKSUM_CHECK_ICMP6 0
 /*-----------------------------------------------------------------------------*/
 /* USER CODE BEGIN 1 */
+ /* MEM_SIZE: the size of the heap memory. If the application will send
+ a lot of data that needs to be copied, this should be set high. */
+ #define MEM_SIZE                (8*1024)
+
+ /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
+    sends a lot of data out of ROM (or other static memory), this
+    should be set high. */
+ #define MEMP_NUM_PBUF           32
+ /* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
+    per active UDP "connection". */
+ #define MEMP_NUM_UDP_PCB        10
+ /* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
+    connections. */
+ #define MEMP_NUM_TCP_PCB        16
+ /* MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP
+    connections. */
+ #define MEMP_NUM_TCP_PCB_LISTEN 8
+ /* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
+    segments. */
+ #define MEMP_NUM_TCP_SEG        16
+ /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
+    timeouts. */
+ #define MEMP_NUM_SYS_TIMEOUT    10
+
+
+ /* ---------- Pbuf options ---------- */
+ /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
+ #define PBUF_POOL_SIZE          16
+
+ /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
+ #define PBUF_POOL_BUFSIZE       1524
+
+
+ /* ---------- TCP options ---------- */
+ #define LWIP_TCP                1
+ #define TCP_TTL                 255
+
+ /* Controls if TCP should queue segments that arrive out of
+    order. Define to 0 if your device is low on memory. */
+ #define TCP_QUEUE_OOSEQ         0
+
+ /* TCP Maximum segment size. */
+ #define TCP_MSS                 (1500 - 40)	  /* TCP_MSS = (Ethernet MTU - IP header size - TCP header size) */
+
+ /* TCP sender buffer space (bytes). */
+ #define TCP_SND_BUF             (4*TCP_MSS)
+
+ /*  TCP_SND_QUEUELEN: TCP sender buffer space (pbufs). This must be at least
+   as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work. */
+
+ #define TCP_SND_QUEUELEN        (2* TCP_SND_BUF/TCP_MSS)
+
+ /* TCP receive window. */
+ #define TCP_WND                 (2*TCP_MSS)
+
+
+ /* ---------- ICMP options ---------- */
+ #define LWIP_ICMP                       1
+
+
+ /* ---------- DHCP options ---------- */
+ /* Define LWIP_DHCP to 1 if you want DHCP configuration of
+    interfaces. DHCP is not implemented in lwIP 0.5.1, however, so
+    turning this on does currently not work. */
+ #define LWIP_DHCP               1
+
+
+ /* ---------- UDP options ---------- */
+ #define LWIP_UDP                1
+ #define UDP_TTL                 255
+
+#define LWIP_NETCONN                    1
+
+ /**
+  * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
+  */
+ #define LWIP_SOCKET                     1
+ #define LWIP_DNS                        1
+
+ #define TCPIP_MBOX_SIZE                 6
+ #define DEFAULT_UDP_RECVMBOX_SIZE       6
+ #define DEFAULT_TCP_RECVMBOX_SIZE       6
+ #define DEFAULT_ACCEPTMBOX_SIZE         6
+
+ /* mbedTLS server opts */
+ #define SO_REUSE 1
+
+ #define LWIP_SO_RCVTIMEO 1
+ #define MEMP_NUM_NETCONN 16
+
 
 /* USER CODE END 1 */
 

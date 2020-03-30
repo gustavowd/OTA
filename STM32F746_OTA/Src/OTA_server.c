@@ -22,14 +22,17 @@
 
 #include "driver_uart.h"
 
-#define AUTH_SERVER "intranet.pb.utfpr.edu.br"
+#define AUTH_SERVER "moodle.pb.utfpr.edu.br"
 #define AUTH_PORT 443
 #define AUTH_SERVER_LOOKUP_RETRIES 5
 #define AUTH_USER ""
 #define AUTH_PASS ""
 #define AUTH_DATA "POSTDATA=dst=&popup=true&username=" AUTH_USER "&password=" AUTH_PASS "\r\n"
 #define AUTH_DATA_LEN "65"	// sizeof(AUTH_DATA)
-#define AUTH_REQUEST "POST /login HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: OMG/rainbows!!!\r\nAccept: */*\r\nContent-Length: " AUTH_DATA_LEN "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n" AUTH_DATA "\r\n"
+//#define AUTH_REQUEST "POST /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: OMG/rainbows!!!\r\nAccept: */*\r\nContent-Length: " "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n"
+
+#define AUTH_REQUEST "GET /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+
 #define AUTH_REQUEST_BUFFER_SIZE 512
 
 struct tls_client cli;
@@ -137,24 +140,36 @@ int utfpr_auth(void)
 		goto deallocate;
 	}
 
-	snprintf(buf, sizeof(buf), "%hhu.%hhu.%hhu.%hhu", server_addr->h_addr[0], server_addr->h_addr[1], server_addr->h_addr[2], server_addr->h_addr[3]);
+   char server_ip_s[16];
+   unsigned long server_ip = *((unsigned long*) server_addr->h_addr);
 
-	if(tls_client_connect(&cli, buf, AUTH_PORT)) {
+   // Convert the IP Address into a string.
+   sprintf(server_ip_s, "%d.%d.%d.%d", (int)(server_ip & 0xff), (int)((server_ip >> 8) & 0xff),
+		  (int)((server_ip >> 16) & 0xff), (int)((server_ip >> 24) & 0xff));
+
+   ret = tls_client_connect(&cli, server_ip_s, AUTH_PORT);
+	if(ret) {
+		ret = pdFALSE;
+		goto deallocate;
+
+	}
+
+	int len = strlen((char *) AUTH_REQUEST);
+	if(http_send_request(&cli.con, AUTH_REQUEST, len) < 0) {
 		ret = pdFALSE;
 		goto deallocate;
 	}
 
-	if(http_send_request(&cli.con, AUTH_REQUEST, sizeof(AUTH_REQUEST)) < 0) {
-		ret = pdFALSE;
-		goto deallocate;
-	}
-
+	http_get_response(&cli.con, buf, sizeof(buf));
+	http_get_response(&cli.con, buf, sizeof(buf));
+	/*
 	while(http_get_response(&cli.con, buf, sizeof(buf))) {
-		if(strstr(buf, "\n\r\n\r  Voc� est� logado!\n\r")) {
+		if(strstr((const char *)buf, (const char *)"\n\r\n\r  Voc� est� logado!\n\r")) {
 			ret = pdTRUE;
 			break;
 		}
 	}
+	*/
 
 deallocate:
 	tls_connection_free(&cli.con);
