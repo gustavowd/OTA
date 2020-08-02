@@ -22,7 +22,7 @@
 
 #include "driver_uart.h"
 
-#define AUTH_SERVER "moodle.pb.utfpr.edu.br"
+#define AUTH_SERVER "192.168.0.121"//moodle.pb.utfpr.edu.br
 #define AUTH_PORT 443
 #define AUTH_SERVER_LOOKUP_RETRIES 5
 #define AUTH_USER ""
@@ -31,7 +31,8 @@
 #define AUTH_DATA_LEN "65"	// sizeof(AUTH_DATA)
 //#define AUTH_REQUEST "POST /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: OMG/rainbows!!!\r\nAccept: */*\r\nContent-Length: " "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n"
 
-#define AUTH_REQUEST "GET /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST "GET /files/TesteTcc.txt HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+//#define AUTH_REQUEST "GET /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 
 #define AUTH_REQUEST_BUFFER_SIZE 512
 
@@ -114,13 +115,15 @@ int utfpr_auth(void)
 	int retries, ret = pdFALSE;
 
 	struct hostent *server_addr = NULL;
-
+	UARTPutString("Iniciou a função UTFPR_Auth\n\r\n\r>>",33);
 	if(tls_client_init(&cli)) {
+		UARTPutString("Falha na inicializacao do cliente\n\r\n\r>>",39);
 		ret = pdFALSE;
 		goto exit;
 	}
 
 	if(tls_cert_load(&cli.tls, NULL, SSL_CA_PEM, NULL, NULL)) {
+		UARTPutString("Falha no Certificado\n\r\n\r>>",26);
 		ret = pdFALSE;
 		goto deallocate;
 	}
@@ -130,12 +133,14 @@ int utfpr_auth(void)
 	do {
 		server_addr = gethostbyname(AUTH_SERVER);
 		if(server_addr == NULL) {
+			UARTPutString("Falha em obter o host\n\r\n\r>>",44);
 			retries--;
 			vTaskDelay(2000);
 		}
 	} while(server_addr == NULL && retries);
 
 	if(!retries) {
+		UARTPutString("Maximo alcancadas\n\r\n\r>>",23);
 		ret = pdTRUE;
 		goto deallocate;
 	}
@@ -149,6 +154,7 @@ int utfpr_auth(void)
 
    ret = tls_client_connect(&cli, server_ip_s, AUTH_PORT);
 	if(ret) {
+		UARTPutString("Falha na conexao TLS\n\r\n\r>>",26);
 		ret = pdFALSE;
 		goto deallocate;
 
@@ -156,12 +162,18 @@ int utfpr_auth(void)
 
 	int len = strlen((char *) AUTH_REQUEST);
 	if(http_send_request(&cli.con, AUTH_REQUEST, len) < 0) {
+		UARTPutString("Falha na requisicao\n\r\n\r>>",25);
 		ret = pdFALSE;
 		goto deallocate;
 	}
 
 	http_get_response(&cli.con, buf, sizeof(buf));
+	UARTPutString("Armazenou no buf1\n\r\n\r>>",24);
+	UARTPutString(buf,sizeof(buf));
 	http_get_response(&cli.con, buf, sizeof(buf));
+	UARTPutString("\nArmazenou no buf2\n\r\n\r>>",25);
+	UARTPutString(buf,sizeof(buf));
+	UARTPutString("\n\r\n\r>>Encerrou a transmicao\n\r\n\r>>",33);
 	/*
 	while(http_get_response(&cli.con, buf, sizeof(buf))) {
 		if(strstr((const char *)buf, (const char *)"\n\r\n\r  Voc� est� logado!\n\r")) {
