@@ -24,6 +24,8 @@
 #include "fatfs.h"
 #include "mbedtls.h"
 
+
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -72,6 +74,8 @@ static void MX_RNG_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 void StartDefaultTask(void *argument);
 
+void Fat_Error_Handler(FRESULT valor);
+
 /* USER CODE BEGIN PFP */
 void DHCP_Thread(void *argument);
 void SSL_Client(void *argument);
@@ -114,8 +118,13 @@ int main(void)
   MX_RNG_Init();
   MX_SDMMC1_SD_Init();
   /* Up to user define the empty MX_MBEDTLS_Init() function located in mbedtls.c file */
-  MX_FATFS_Init();
+  //MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  /* Vou colocar um codigo pronto aqui que faz o teste do cartão sd,
+     * ainda há duvidas sobre o bit wide bus que no exemplo é 4bits e neste projeto está 1bit
+     *
+     */
+
 
   /* USER CODE END 2 */
 
@@ -308,7 +317,7 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 0;
+  hsd1.Init.ClockDiv = 32;
   /* USER CODE BEGIN SDMMC1_Init 2 */
 
   /* USER CODE END SDMMC1_Init 2 */
@@ -340,9 +349,15 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+//uint8_t retSD; /* Return value for SD */
+char SD_Path[4]; /* SD logical drive path */
+//FATFS SDFatFS; /* File system object for SD logical drive */
+//FIL SDFile; /* File object for SD */
+
 FATFS fatfs;
 FIL file;
 uint8_t read_buffer[512];
+BYTE work[512];
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -356,21 +371,29 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
 	unsigned int size = 0;
+	UARTPutString("FatFS Init\n\r\n\r>>",16);
+	if(FATFS_LinkDriver(&SD_Driver, SD_Path)!=0)
+		UARTPutString("falha link\n\r\n\r>>",21);
 	/* Terceiro argumento igual a 1 pede para montar agora o sistema de arquivos */
-	FRESULT res = f_mount(&fatfs, SDPath, 1);
-
-	if (res == FR_OK){
+	//UARTPutString("Fazendo o mount\n\r\n\r>>",21);
+	FRESULT res = f_mount(&SDFatFS, SDPath, 1);
+	if (res != FR_OK) Fat_Error_Handler(res);
+	UARTPutString("Encerra FatFS_init\n\r\n\r>>",24);
+	/*if (res == FR_OK){
+		UARTPutString("passou do monut\n\r\n\r>>",21);
 		res = f_open(&file, "teste.txt", FA_OPEN_EXISTING | FA_READ);
 
 		if (res == FR_OK){
 			//uint32_t file_size = f_size(&file);
+			UARTPutString("passou file open\n\r\n\r>>",22);
 			do{
-				f_read(&file, read_buffer, 512, &size);
-			}while(size != 0);
+				res=f_read(&file, read_buffer, 512, &size);
 
+			}while(size != 0);
+			UARTPutString("fechou arquivo\n\r\n\r>>",20);
 			f_close(&file);
-		}
-	}
+		} else Fat_Error_Handler(res);
+	} else Fat_Error_Handler(res);*/
   /* Infinite loop */
   for(;;)
   {
@@ -411,6 +434,77 @@ void Error_Handler(void)
 
   /* USER CODE END Error_Handler_Debug */
 }
+
+void Fat_Error_Handler(FRESULT valor)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+	UARTPutString("Erro FatFS: ",12);
+	switch(valor){
+		case(0):
+					UARTPutString("FR_OK\n\r",7);
+		break;
+		case(1):
+					UARTPutString("FR_DISK_ERR\n\r",13);
+		break;
+		case(2):
+					UARTPutString("FR_INT_ERR\n\r",12);
+		break;
+		case(3):
+					UARTPutString("FR_NOT_READY\n\r",14);
+		break;
+		case(4):
+					UARTPutString("FR_NO_FILE\n\r",12);
+		break;
+		case(5):
+					UARTPutString("FR_NO_PATH\n\r",12);
+		break;
+		case(6):
+					UARTPutString("FR_INVALID_NAME\n\r",17);
+		break;
+		case(7):
+					UARTPutString("FR_DENIED\n\r",11);
+		break;
+		case(8):
+					UARTPutString("FR_EXIST\n\r",10);
+		break;
+		case(9):
+					UARTPutString("FR_INVALID_OBJECT\n\r",19);
+		break;
+		case(10):
+					UARTPutString("FR_WRITE_PROTECTED\n\r",20);
+		break;
+		case(11):
+					UARTPutString("FR_INVALID_DRIVE\n\r",18);
+		break;
+		case(12):
+					UARTPutString("FR_NOT_ENABLED\n\r",16);
+		break;
+		case(13):
+					UARTPutString("FR_NO_FILESYSTEM\n\r",18);
+		break;
+		case(14):
+					UARTPutString("FR_MKFS_ABORTED\n\r",17);
+		break;
+		case(15):
+					UARTPutString("FR_TIMEOUT\n\r",12);
+		break;
+		case(16):
+					UARTPutString("FR_LOCKED\n\r",11);
+		break;
+		case(17):
+					UARTPutString("FR_NOT_ENOUGH_CORE\n\r",20);
+		break;
+		case(18):
+					UARTPutString("FR_TOO_MANY_OPEN_FILES\n\r",24);
+		break;
+		case(19):
+					UARTPutString("FR_INVALID_PARAMETER\n\r",22);
+		break;
+	}
+  /* USER CODE END Error_Handler_Debug */
+}
+
 
 #ifdef  USE_FULL_ASSERT
 /**

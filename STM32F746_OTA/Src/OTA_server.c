@@ -21,6 +21,7 @@
 #include "tls_client_utils.h"
 
 #include "driver_uart.h"
+#include "fatfs.h"
 
 #define AUTH_SERVER "192.168.0.121"//moodle.pb.utfpr.edu.br
 #define AUTH_PORT 443
@@ -31,13 +32,15 @@
 #define AUTH_DATA_LEN "65"	// sizeof(AUTH_DATA)
 //#define AUTH_REQUEST "POST /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: OMG/rainbows!!!\r\nAccept: */*\r\nContent-Length: " "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n"
 
-#define AUTH_REQUEST "GET /files/TesteTcc.txt HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-//#define AUTH_REQUEST "GET /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+//#define AUTH_REQUEST "GET /files/TesteTcc.txt HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+//#define AUTH_REQUEST "GET /files/revisao-de-literatura.tex HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST "GET /index.html HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 
 #define AUTH_REQUEST_BUFFER_SIZE 512
-
+#define BUFFER_SIZE 512
 struct tls_client cli;
-static uint8_t buf[1024];
+static uint8_t buf[BUFFER_SIZE];
+//static uint8_t buf_HTTP[366];
 SemaphoreHandle_t sem_connected = NULL;
 
 
@@ -74,6 +77,13 @@ const char SSL_CA_PEM[] =												\
 "HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==\r\n"	\
 "-----END CERTIFICATE-----\r\n";
 
+void OTA_Error_Handler(char *msg)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+	UARTPutString(msg,strlen(msg));
+  /* USER CODE END Error_Handler_Debug */
+}
 
 int http_send_request(struct tls_connection *con, char *req, size_t req_size)
 {
@@ -107,23 +117,26 @@ int http_get_response(struct tls_connection *con, char *resp, size_t resp_size)
 	return ret;
 }
 
+void sha256sum_teste(){
 
+}
 
 
 int utfpr_auth(void)
 {
 	int retries, ret = pdFALSE;
+	int i=0;
 
 	struct hostent *server_addr = NULL;
-	UARTPutString("Iniciou a função UTFPR_Auth\n\r\n\r>>",33);
+	OTA_Error_Handler("Iniciou a função UTFPR_Auth\n\r\n\r>>");
 	if(tls_client_init(&cli)) {
-		UARTPutString("Falha na inicializacao do cliente\n\r\n\r>>",39);
+		OTA_Error_Handler("Falha na inicializacao do cliente\n\r\n\r>>");
 		ret = pdFALSE;
 		goto exit;
 	}
 
 	if(tls_cert_load(&cli.tls, NULL, SSL_CA_PEM, NULL, NULL)) {
-		UARTPutString("Falha no Certificado\n\r\n\r>>",26);
+		OTA_Error_Handler("Falha no Certificado\n\r\n\r>>");
 		ret = pdFALSE;
 		goto deallocate;
 	}
@@ -133,14 +146,14 @@ int utfpr_auth(void)
 	do {
 		server_addr = gethostbyname(AUTH_SERVER);
 		if(server_addr == NULL) {
-			UARTPutString("Falha em obter o host\n\r\n\r>>",44);
+			OTA_Error_Handler("Falha em obter o host\n\r\n\r>>");
 			retries--;
 			vTaskDelay(2000);
 		}
 	} while(server_addr == NULL && retries);
 
 	if(!retries) {
-		UARTPutString("Maximo alcancadas\n\r\n\r>>",23);
+		OTA_Error_Handler("Maximo alcancadas\n\r\n\r>>");
 		ret = pdTRUE;
 		goto deallocate;
 	}
@@ -154,7 +167,7 @@ int utfpr_auth(void)
 
    ret = tls_client_connect(&cli, server_ip_s, AUTH_PORT);
 	if(ret) {
-		UARTPutString("Falha na conexao TLS\n\r\n\r>>",26);
+		OTA_Error_Handler("Falha na conexao TLS\n\r\n\r>>");
 		ret = pdFALSE;
 		goto deallocate;
 
@@ -162,26 +175,69 @@ int utfpr_auth(void)
 
 	int len = strlen((char *) AUTH_REQUEST);
 	if(http_send_request(&cli.con, AUTH_REQUEST, len) < 0) {
-		UARTPutString("Falha na requisicao\n\r\n\r>>",25);
+		OTA_Error_Handler("Falha na requisicao\n\r\n\r>>");
 		ret = pdFALSE;
 		goto deallocate;
 	}
-
+	/*
 	http_get_response(&cli.con, buf, sizeof(buf));
-	UARTPutString("Armazenou no buf1\n\r\n\r>>",24);
+	//read_buffer=buf;
 	UARTPutString(buf,sizeof(buf));
+	UARTPutString("\n\r\n\r>>",6);
 	http_get_response(&cli.con, buf, sizeof(buf));
-	UARTPutString("\nArmazenou no buf2\n\r\n\r>>",25);
 	UARTPutString(buf,sizeof(buf));
 	UARTPutString("\n\r\n\r>>Encerrou a transmicao\n\r\n\r>>",33);
-	/*
-	while(http_get_response(&cli.con, buf, sizeof(buf))) {
-		if(strstr((const char *)buf, (const char *)"\n\r\n\r  Voc� est� logado!\n\r")) {
-			ret = pdTRUE;
-			break;
-		}
-	}
 	*/
+	//FATFS fatfs;
+	//FIL file;
+	//uint8_t read_buffer[512];
+	//BYTE work[512];
+
+	FRESULT res=FR_OK;
+	FIL Arquivo;
+	//uint32_t file_size = f_size(&Arquivo);
+	uint32_t BW;
+	//UARTPutString("Tentando gravar dados\n\r\n\r>>",27);
+	//res = f_mount(&fatfs, SDPath, 1);
+	//http_get_response(&cli.con, buf_HTTP, sizeof(buf_HTTP));
+	//UARTPutString(buf_HTTP,sizeof(buf_HTTP));
+	//UARTPutString("\n\r\n\r>>",6);
+
+	/*
+	 * TODO
+	 * 	Falta tirar o cabeçario HTTP do arquivo.
+	 */
+
+	if(res==FR_OK){
+		res=f_open(&Arquivo, "index.html", FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
+		if(res==FR_OK){
+			UARTPutString("iniciou a transmissao\n\r\n\r>>",27);
+			while(http_get_response(&cli.con, buf, sizeof(buf))) {//OBTEM UM OS DADOS
+				if(buf[BUFFER_SIZE-1]!=0){
+					res=f_write(&Arquivo, buf,sizeof(buf)-1,(void *)&BW);//GRAVA NO ARQUIVO
+					if(res!=FR_OK)
+						Fat_Error_Handler(res);
+				}
+				else{
+
+					while(buf[i]!='\0'){// DEVE HAVER UMA FORMA MAIS EFICIENTE DE SE FAZER ISSO.
+						f_write(&Arquivo, &buf[i],1,(void *)&BW);
+						i++;
+					}
+				}
+			}
+			res=f_close(&Arquivo);
+			if(res!=FR_OK)
+				Fat_Error_Handler(res);
+			else UARTPutString("Fechou arquivo\n\r\n\r>>",20);
+		}
+		else Fat_Error_Handler(res);
+	}
+	else Fat_Error_Handler(res);
+
+	UARTPutString("Encerrou a transmissao\n\r\n\r>>",28);
+
+
 
 deallocate:
 	tls_connection_free(&cli.con);
@@ -233,3 +289,8 @@ void SSL_Client(void *argument)
 	  vTaskDelay(10000);
   }
 }
+
+
+
+
+
