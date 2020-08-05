@@ -22,6 +22,7 @@
 
 #include "driver_uart.h"
 #include "fatfs.h"
+#include "sha256.h"
 
 #define AUTH_SERVER "192.168.0.121"//moodle.pb.utfpr.edu.br
 #define AUTH_PORT 443
@@ -32,9 +33,9 @@
 #define AUTH_DATA_LEN "65"	// sizeof(AUTH_DATA)
 //#define AUTH_REQUEST "POST /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: OMG/rainbows!!!\r\nAccept: */*\r\nContent-Length: " "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n"
 
-//#define AUTH_REQUEST "GET /files/TesteTcc.txt HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST "GET /files/TesteTcc.txt HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 //#define AUTH_REQUEST "GET /files/revisao-de-literatura.tex HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-#define AUTH_REQUEST "GET /index.html HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+//#define AUTH_REQUEST "GET /index.html HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 
 #define AUTH_REQUEST_BUFFER_SIZE 512
 #define BUFFER_SIZE 512
@@ -84,6 +85,29 @@ void OTA_Error_Handler(char *msg)
 	UARTPutString(msg,strlen(msg));
   /* USER CODE END Error_Handler_Debug */
 }
+void sha256sum_teste(const TCHAR* path, unsigned char * saida){//NÃO DEIXAR NENHUM ARQUIVO ABERTO ANTES DE CHAMAR ESSA FUNÇÃO
+	mbedtls_sha256_context Contexto;
+	FIL Arq;
+	FRESULT rec;
+	rec=f_open(&Arq, path, FA_READ);
+	if(rec!=FR_OK)
+		Fat_Error_Handler(rec);
+	mbedtls_sha256_init(&Contexto);//inicia
+	if(mbedtls_sha256_update_ret(&Contexto,&Arq, f_size(&Arq))==0){//adiciona o arquivo
+		if(mbedtls_sha256_starts_ret(&Contexto, 0)==0){ //inicia o calculo
+			if(mbedtls_sha256_finish_ret(&Contexto, saida)){//termina e grava o resultado na saida
+			}else mbedtls_sha256_free(&Contexto);
+		}else mbedtls_sha256_free(&Contexto);
+	}else mbedtls_sha256_free(&Contexto);
+	f_close(&Arq);
+	UARTPutString(saida, sizeof(saida));
+	UARTPutString("\n\r\n\r>>",6);
+
+	//mbedtls_sha256_ret(Entrada,sizeof(Entrada), saida,0 );
+}
+void integridade(unsigned char X, unsigned char Y){
+
+}
 
 int http_send_request(struct tls_connection *con, char *req, size_t req_size)
 {
@@ -117,9 +141,7 @@ int http_get_response(struct tls_connection *con, char *resp, size_t resp_size)
 	return ret;
 }
 
-void sha256sum_teste(){
 
-}
 
 
 int utfpr_auth(void)
@@ -195,9 +217,10 @@ int utfpr_auth(void)
 
 	FRESULT res=FR_OK;
 	FIL Arquivo;
+	FIL Arquivo1,Arquivo2;
 	//uint32_t file_size = f_size(&Arquivo);
 	uint32_t BW;
-	//UARTPutString("Tentando gravar dados\n\r\n\r>>",27);
+	UARTPutString("Tentando gravar dados\n\r\n\r>>",27);
 	//res = f_mount(&fatfs, SDPath, 1);
 	//http_get_response(&cli.con, buf_HTTP, sizeof(buf_HTTP));
 	//UARTPutString(buf_HTTP,sizeof(buf_HTTP));
@@ -209,7 +232,7 @@ int utfpr_auth(void)
 	 */
 
 	if(res==FR_OK){
-		res=f_open(&Arquivo, "index.html", FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
+		res=f_open(&Arquivo, "novo.txt", FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
 		if(res==FR_OK){
 			UARTPutString("iniciou a transmissao\n\r\n\r>>",27);
 			while(http_get_response(&cli.con, buf, sizeof(buf))) {//OBTEM UM OS DADOS
@@ -236,6 +259,26 @@ int utfpr_auth(void)
 	else Fat_Error_Handler(res);
 
 	UARTPutString("Encerrou a transmissao\n\r\n\r>>",28);
+
+	unsigned char x[32],y[32];
+	//f_open(&Arquivo1, "TesteTcc.txt", FA_READ);
+	sha256sum_teste("TesteTcc.txt",&x);
+	sha256sum_teste("novo.txt",&y);
+	int flag=0;
+	for(i=0;i<32;i++){// só testando depois melhoro
+		if(x[i]!=y[i])
+			flag=1;
+	}
+	if(flag==0){
+		UARTPutString("Os arquivos sao identicos\n\r\n\r>>",31);
+	}
+	else	UARTPutString("sao diferentes\n\r\n\r>>",20);
+
+	//sha256sum_teste("Copia.txt");
+
+
+
+	//f_close(&Arquivo1);
 
 
 
