@@ -371,14 +371,14 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
 	unsigned int size = 0;
-	UARTPutString("FatFS Init\n\r\n\r>>",16);
+	UARTPutString("FatFS Iniciado\n\r>>",18);
 	if(FATFS_LinkDriver(&SD_Driver, SD_Path)!=0)
 		UARTPutString("falha link\n\r\n\r>>",21);
 	/* Terceiro argumento igual a 1 pede para montar agora o sistema de arquivos */
 	//UARTPutString("Fazendo o mount\n\r\n\r>>",21);
 	FRESULT res = f_mount(&SDFatFS, SDPath, 1);
 	if (res != FR_OK) Fat_Error_Handler(res);
-	UARTPutString("Encerra FatFS_init\n\r\n\r>>",24);
+	//UARTPutString("Encerra FatFS_init\n\r\n\r>>",24);
 	/*if (res == FR_OK){
 		UARTPutString("passou do monut\n\r\n\r>>",21);
 		res = f_open(&file, "teste.txt", FA_OPEN_EXISTING | FA_READ);
