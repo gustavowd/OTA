@@ -33,8 +33,8 @@
 //#define AUTH_DATA_LEN "65"	// sizeof(AUTH_DATA)
 //#define AUTH_REQUEST "POST /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: OMG/rainbows!!!\r\nAccept: */*\r\nContent-Length: " "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n"
 
-#define AUTH_REQUEST "GET /files/VERSAO.TXT HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-//#define AUTH_REQUEST "GET /files/revisao-de-literatura.tex HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+//#define AUTH_REQUEST "GET /files/VERSAO.TXT HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST "GET /files/Gustavo.pdf HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 //#define AUTH_REQUEST "GET /index.html HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 
 #define AUTH_REQUEST_BUFFER_SIZE 512
@@ -81,22 +81,17 @@ const char SSL_CA_PEM[] =												\
 "HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==\r\n"	\
 "-----END CERTIFICATE-----\r\n";
 
-void Header_HTTP(const TCHAR* path){
-	FIL Arq;
-	FRESULT res;
-	uint8_t buffer[512];
+int Header_HTTP(uint8_t* buffer){
 	int lidos;
-	int Tam,i;
-	res=f_open(&Arq, path, FA_READ|FA_WRITE);
-	if(res==FR_OK){
-		Tam= f_size(&Arq);
-		f_read(&Arq, &buffer,512, &lidos);
-	}
+	int Tam,i,j;
 	for (i=0;
-((buffer[i]!='\r')&&(buffer[i+1]!='\n')&&(buffer[i+2]!='\r')&&(buffer[i+4]!='\n'));i++);
-	UARTPutString(buffer,i+3);
-	UARTPutString("EOF\n\r>>",7);
-	f_close(&Arq);
+!((buffer[i]=='\r')&&(buffer[i+1]=='\n')&&(buffer[i+2]=='\r')&&(buffer[i+3]=='\n'));
+i++);
+
+	//UARTPutString(buffer,BUFFER_SIZE);//I+5
+	//UARTPutString("EOF\n\r>>",7);
+	//UARTPutString("\n\r\n\rOutro arquivo agr\n\r\n\r\n\r>>",29);
+	return(i+4);
 }
 
 
@@ -113,8 +108,8 @@ void sha256sum_teste(const TCHAR* path, unsigned char* saida){
 	FIL Arq;
 	FRESULT rec;
 	int BW,lido=0;
-	UARTPutString(path,9);
-	UARTPutString(" Hash = ",7);
+	//UARTPutString(path,9);
+	//UARTPutString(" Hash = ",7);
 	rec=f_open(&Arq, path, FA_READ);
 	if(rec!=FR_OK)
 		Fat_Error_Handler(rec);
@@ -138,33 +133,40 @@ void sha256sum_teste(const TCHAR* path, unsigned char* saida){
 	}else {mbedtls_sha256_free(&Contexto);UARTPutString("Erro update\n\r",13);}*/
 	f_close(&Arq);
 	mbedtls_sha256_free(&Contexto);
-	UARTPutString(saida, 32);
-	UARTPutString("\n\r>>",4);
-
-
+	//UARTPutString(saida, 32);
+	//UARTPutString("\n\r>>",4);
 	//mbedtls_sha256_ret(Entrada,sizeof(Entrada), saida,0 );
 }
-void integridade(/*unsigned char X, unsigned char Y*/){
-	unsigned char x[32],y[32];
-	FIL Arquivo1,Arquivo2;
-	int i;
-		//f_open(&Arquivo1, "TesteTcc.txt", FA_READ);
-		sha256sum_teste("copia.TXT",&x);
-		sha256sum_teste("NOVO.TXT",&y);//NOVO.TXT=IGUAL, VERSAO.TXT=DIFERENTE
-		int flag=0;
-		for(i=0;i<32;i++){// só testando depois melhoro
-			if(x[i]!=y[i])
-				flag=1;
-		}
-		UARTPutString(x,sizeof(x));
-		UARTPutString("\n\r>>",4);
-		UARTPutString(y,sizeof(y));
-		UARTPutString("\n\r>>",4);
-		if(flag==0){
-			UARTPutString("Os arquivos sao identicos\n\r>>",29);
+int integridade(const TCHAR* Firmware_path, const TCHAR* Versao_path){
+	unsigned char Saida_Firmware[32],Saida_Versao[32];
+	FIL Versao;
+	int i, BW;
+	sha256sum_teste(Firmware_path,Saida_Firmware);
+	sha256sum_teste(Versao_path,Saida_Versao);
 
+	//f_open(&Versao, Versao_path, FA_READ);
+	//f_read(&Versao, Saida_Versao, 32, &BW);
+	int flag=0;
+	for(i=0;i<32;i++){// só testando depois melhoro
+		if(Saida_Firmware[i]!=Saida_Versao[i]){
+			UARTPutString("Hash de A = ",12);
+			UARTPutString(Saida_Firmware, 32);
+			UARTPutString("\n\r>>",4);
+			UARTPutString("Hash de B = ",12);
+			UARTPutString(Saida_Versao, 32);
+			UARTPutString("\n\r>>",4);
+			UARTPutString("Falha no teste de integridade\n\r>>",33);
+			return(1);
 		}
-		else	UARTPutString("sao diferentes\n\r>>",18);
+	}
+	UARTPutString("Hash de A = ",12);
+	UARTPutString(Saida_Firmware, 32);
+	UARTPutString("\n\r>>",4);
+	UARTPutString("Hash de B = ",12);
+	UARTPutString(Saida_Versao, 32);
+	UARTPutString("\n\r>>",4);
+	UARTPutString("Sucesso no teste de integridade\n\r>>",29);
+	return(0);
 }
 
 int http_send_request(struct tls_connection *con, char *req, size_t req_size)
@@ -259,7 +261,7 @@ int Versao(void)
 		ret = pdFALSE;
 		goto deallocate;
 	}
-	UARTPutString("Requisição feita\n\r>>",sizeof("Requisição feita\n\r>>"));
+	UARTPutString("Requisição feita\n\r>>",20);
 
 	FRESULT res;
 	FIL Arquivo;
@@ -271,11 +273,22 @@ int Versao(void)
 	 * 	Falta tirar o cabeçario HTTP do arquivo.
 	 */
 
-	res=f_open(&Arquivo, "versao.txt", FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
+	res=f_open(&Arquivo, "V_D.PDF", FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
 	if(res==FR_OK){
 		UARTPutString("iniciou a transmissao\n\r>>",sizeof("iniciou a transmissao\n\r>>"));
+		/*-----TIRANDO CABEÇALHO HTTP------*/
+		http_get_response(&cli.con, buf, sizeof(buf));
+		for (i=0;
+		!((buf[i]=='\r')&&(buf[i+1]=='\n')&&(buf[i+2]=='\r')&&(buf[i+3]=='\n'));
+		i++);
+		i+=4;
+		for (j=0;(j+i)<BUFFER_SIZE;j++){
+				buf[j]=buf[j+i];
+			}
+		f_write(&Arquivo, buf,BUFFER_SIZE-(i),(void *)&BW);
+		/*-----FIM TIRANDO CABEÇALHO HTTP------*/
 		while(http_get_response(&cli.con, buf, sizeof(buf))) {//OBTEM UM OS DADOS
-			if(buf[BUFFER_SIZE-1]!=0){
+			if(buf[BUFFER_SIZE-1]!='\0'){
 				res=f_write(&Arquivo, buf,sizeof(buf),(void *)&BW);//GRAVA NO ARQUIVO
 				if(res!=FR_OK)
 					Fat_Error_Handler(res);
@@ -287,7 +300,7 @@ int Versao(void)
 					i++;
 				}*/
 				for (j=0;buf[j]!='\0';j++);//achar uma função que acha o fim do arquivo pra isso ficar mais rapido
-				f_write(&Arquivo, buf,j-2,&BW);
+				f_write(&Arquivo, buf,j,&BW);
 			}
 		}
 		res=f_close(&Arquivo);
@@ -299,8 +312,8 @@ int Versao(void)
 
 
 	UARTPutString("Encerrou a transmissao\n\r>>",28);
+	integridade("C1.TXT","V_D.TXT");
 
-	Header_HTTP("versao.txt");
 
 deallocate:
 	tls_connection_free(&cli.con);
@@ -325,6 +338,7 @@ void SSL_Client(void *argument)
   //mbedtls_net_init(NULL);
   sem_connected = xSemaphoreCreateBinary();
 
+  int res;
 
   InitUART();
   // Limpa a tela do terminal
@@ -349,7 +363,7 @@ void SSL_Client(void *argument)
 
   xSemaphoreTake(sem_connected, portMAX_DELAY);
   Versao();
-  integridade();
+  //res=integridade(Download(), Get_Hash());
   /*TODO
    * Ao final essa thread tem que fazer +- isso:
    * char Arquivo_Versao []= versao(); //versao() retorna o nome do arquivo em que se quardou as informações de versao.
