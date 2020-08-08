@@ -78,7 +78,7 @@ void Fat_Error_Handler(FRESULT valor);
 
 /* USER CODE BEGIN PFP */
 void DHCP_Thread(void *argument);
-void SSL_Client(void *argument);
+void OTA(void *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -160,11 +160,11 @@ int main(void)
   DHCP_ThreadId = osThreadNew(DHCP_Thread, NULL, &DHCPTask_attributes);
 
   const osThreadAttr_t TLSTask_attributes = {
-    .name = "TLSTask",
+    .name = "OTATask",
     .priority = (osPriority_t) osPriorityHigh,
     .stack_size = 12*256
   };
-  TLS_ThreadId = osThreadNew(SSL_Client, NULL, &TLSTask_attributes);
+  TLS_ThreadId = osThreadNew(OTA, NULL, &TLSTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 

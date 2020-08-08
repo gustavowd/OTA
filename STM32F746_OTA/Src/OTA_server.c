@@ -33,17 +33,16 @@
 //#define AUTH_DATA_LEN "65"	// sizeof(AUTH_DATA)
 //#define AUTH_REQUEST "POST /login/index.php HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: OMG/rainbows!!!\r\nAccept: */*\r\nContent-Length: " "\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n"
 
-//#define AUTH_REQUEST "GET /files/VERSAO.TXT HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-#define AUTH_REQUEST "GET /files/Gustavo.pdf HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-//#define AUTH_REQUEST "GET /index.html HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_VERSION "GET /files/Version.TXT HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_FIRMWARE "GET /files/Gustavo.pdf HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_HASH "GET /Hash.txt HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 
 #define AUTH_REQUEST_BUFFER_SIZE 512
 #define BUFFER_SIZE 512
-
+#define VERSION 1
 
 struct tls_client cli;
 static uint8_t buf[BUFFER_SIZE];
-static uint8_t bufaux[217];
 //static uint8_t buf_HTTP[366];
 SemaphoreHandle_t sem_connected = NULL;
 
@@ -81,18 +80,6 @@ const char SSL_CA_PEM[] =												\
 "HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==\r\n"	\
 "-----END CERTIFICATE-----\r\n";
 
-int Header_HTTP(uint8_t* buffer){
-	int lidos;
-	int Tam,i,j;
-	for (i=0;
-!((buffer[i]=='\r')&&(buffer[i+1]=='\n')&&(buffer[i+2]=='\r')&&(buffer[i+3]=='\n'));
-i++);
-
-	//UARTPutString(buffer,BUFFER_SIZE);//I+5
-	//UARTPutString("EOF\n\r>>",7);
-	//UARTPutString("\n\r\n\rOutro arquivo agr\n\r\n\r\n\r>>",29);
-	return(i+4);
-}
 
 
 void OTA_Error_Handler(char *msg)
@@ -102,28 +89,56 @@ void OTA_Error_Handler(char *msg)
 	UARTPutString(msg,strlen(msg));
   /* USER CODE END Error_Handler_Debug */
 }
-void sha256sum_teste(const TCHAR* path, unsigned char* saida){
+void Get_Version(const TCHAR* path, char * Saida){
+	FRESULT res;
+	FIL Arq;
+	int BR=0;
+	res=f_open(&Arq, "Versao.txt",FA_READ);
+	if(res!=FR_OK)
+		Fat_Error_Handler(res);
+	res=f_read(&Arq,&Saida,1,&BR);
+	if(res!=FR_OK)
+		Fat_Error_Handler(res);
+	res=f_close(&Arq);
+	if(res!=FR_OK)
+		Fat_Error_Handler(res);
+}
+void Get_Hash(const TCHAR* path, char * Saida){
+	FRESULT res;
+	FIL Arq;
+	int BR=0;
+
+
+	res=f_open(&Arq, path, FA_CREATE_ALWAYS | FA_WRITE);
+	if(res!=FR_OK)
+		Fat_Error_Handler(res);
+	res=f_write(&Arq,&Saida,32,&BR);
+	if(res!=FR_OK)
+			Fat_Error_Handler(res);
+	res=f_close(&Arq);
+	if(res!=FR_OK)
+			Fat_Error_Handler(res);
+}
+void sha256sum(const TCHAR* path, unsigned char* saida){
 	mbedtls_sha256_context Contexto;
 	uint8_t buffer[512];
 	FIL Arq;
 	FRESULT rec;
 	int BW,lido=0;
-	//UARTPutString(path,9);
-	//UARTPutString(" Hash = ",7);
-	rec=f_open(&Arq, path, FA_READ);
+	rec=f_open(&Arq, path, FA_READ);//abre o arquivo pra leitura
 	if(rec!=FR_OK)
 		Fat_Error_Handler(rec);
-	mbedtls_sha256_init(&Contexto);//inicia
-	mbedtls_sha256_starts_ret(&Contexto, 0);
+	mbedtls_sha256_init(&Contexto);//inicia o contexto
+	mbedtls_sha256_starts_ret(&Contexto, 0);//inicia o sha256
 	while (lido <f_size(&Arq)){
-		rec=f_read(&Arq, buffer,512,&BW);
+		rec=f_read(&Arq, buffer,512,&BW);//adiciona ao buffer 512 bits do arquivo
 		if(rec!=FR_OK)
 				Fat_Error_Handler(rec);
-		mbedtls_sha256_update_ret(&Contexto,buffer,BW);
+		mbedtls_sha256_update_ret(&Contexto,buffer,BW); //adiciona o buffer ao sha256
 		lido+=BW;
 	}
 
-	mbedtls_sha256_finish_ret(&Contexto, saida);
+	mbedtls_sha256_finish_ret(&Contexto, saida);//grava em saida o hash
 	/*
 	if(mbedtls_sha256_update_ret(&Contexto,&Arq, f_size(&Arq))==0){//adiciona o arquivo
 		if(mbedtls_sha256_starts_ret(&Contexto, 0)==0){ //inicia o calculo
@@ -133,20 +148,21 @@ void sha256sum_teste(const TCHAR* path, unsigned char* saida){
 	}else {mbedtls_sha256_free(&Contexto);UARTPutString("Erro update\n\r",13);}*/
 	f_close(&Arq);
 	mbedtls_sha256_free(&Contexto);
-	//UARTPutString(saida, 32);
-	//UARTPutString("\n\r>>",4);
+	UARTPutString(saida, 32);
+	UARTPutString("\n\r>>",4);
 	//mbedtls_sha256_ret(Entrada,sizeof(Entrada), saida,0 );
 }
-int integridade(const TCHAR* Firmware_path, const TCHAR* Versao_path){
+int Integridade(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 	unsigned char Saida_Firmware[32],Saida_Versao[32];
 	FIL Versao;
 	int i, BW;
-	sha256sum_teste(Firmware_path,Saida_Firmware);
-	sha256sum_teste(Versao_path,Saida_Versao);
+	sha256sum(Firmware_path,Saida_Firmware);//obtem o hash do firmware
+	//sha256sum_teste(Versao_path,Saida_Versao);
 
-	//f_open(&Versao, Versao_path, FA_READ);
-	//f_read(&Versao, Saida_Versao, 32, &BW);
-	int flag=0;
+	f_open(&Versao, Versao_path, FA_READ);
+	f_read(&Versao, Saida_Versao, 32,(void *) &BW);//Obtem o hash do firmware do arquivo do servidor
+	f_close(&Versao);
+	//int flag=0;
 	for(i=0;i<32;i++){// só testando depois melhoro
 		if(Saida_Firmware[i]!=Saida_Versao[i]){
 			UARTPutString("Hash de A = ",12);
@@ -165,7 +181,7 @@ int integridade(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 	UARTPutString("Hash de B = ",12);
 	UARTPutString(Saida_Versao, 32);
 	UARTPutString("\n\r>>",4);
-	UARTPutString("Sucesso no teste de integridade\n\r>>",29);
+	UARTPutString("Sucesso no teste de integridade\n\r>>",35);
 	return(0);
 }
 
@@ -204,26 +220,23 @@ int http_get_response(struct tls_connection *con, char *resp, size_t resp_size)
 
 
 
-int Versao(void)
+int Get_File(char *Request, const TCHAR* Path)
 {
 	int retries, ret = pdFALSE;
 	int i=0;
-	UARTPutString("Versão iniciada\n\r>>",sizeof("Versão iniciada\n\r>>"));
+	UARTPutString("Get_File iniciada\n\r>>",21);
 	struct hostent *server_addr = NULL;
 	if(tls_client_init(&cli)) {
 		OTA_Error_Handler("Falha na inicializacao do cliente\n\r>>");
 		ret = pdFALSE;
 		goto exit;
 	}
-
 	if(tls_cert_load(&cli.tls, NULL, SSL_CA_PEM, NULL, NULL)) {
 		OTA_Error_Handler("Falha no Certificado\n\r>>");
 		ret = pdFALSE;
 		goto deallocate;
 	}
-
 	retries = AUTH_SERVER_LOOKUP_RETRIES;
-
 	do {
 		server_addr = gethostbyname(AUTH_SERVER);
 		if(server_addr == NULL) {
@@ -232,88 +245,83 @@ int Versao(void)
 			vTaskDelay(2000);
 		}
 	} while(server_addr == NULL && retries);
-
 	if(!retries) {
 		OTA_Error_Handler("Maximo alcancadas\n\r>>");
 		ret = pdTRUE;
 		goto deallocate;
 	}
-
    char server_ip_s[16];
    unsigned long server_ip = *((unsigned long*) server_addr->h_addr);
-
    // Convert the IP Address into a string.
    sprintf(server_ip_s, "%d.%d.%d.%d", (int)(server_ip & 0xff), (int)((server_ip >> 8) & 0xff),
 		  (int)((server_ip >> 16) & 0xff), (int)((server_ip >> 24) & 0xff));
-
    ret = tls_client_connect(&cli, server_ip_s, AUTH_PORT);
 	if(ret) {
 		OTA_Error_Handler("Falha na conexao TLS\n\r>>");
 		ret = pdFALSE;
 		goto deallocate;
-
 	}
-	UARTPutString("Conexão Estabelecida\n\r>>",24);
+	//UARTPutString("Conexão Estabelecida\n\r>>",24);
 
-	int len = strlen((char *) AUTH_REQUEST);
-	if(http_send_request(&cli.con, AUTH_REQUEST, len) < 0) {
+	int len = strlen((char *) Request);
+	if(http_send_request(&cli.con, Request, len) < 0) {
 		OTA_Error_Handler("Falha na requisicao\n\r>>");
 		ret = pdFALSE;
 		goto deallocate;
 	}
-	UARTPutString("Requisição feita\n\r>>",20);
+	//UARTPutString("Requisição feita\n\r>>",20);
 
 	FRESULT res;
 	FIL Arquivo;
-	uint32_t BW;
+	uint32_t BW=0;
 	int j;
-	UARTPutString("Gravando dados\n\r>>",sizeof("Gravando dados\n\r>>"));
-	/*
-	 * TODO
-	 * 	Falta tirar o cabeçario HTTP do arquivo.
-	 */
+	//UARTPutString("Gravando dados\n\r>>",sizeof("Gravando dados\n\r>>"));
 
-	res=f_open(&Arquivo, "V_D.PDF", FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
+	res=f_open(&Arquivo, Path, FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
 	if(res==FR_OK){
-		UARTPutString("iniciou a transmissao\n\r>>",sizeof("iniciou a transmissao\n\r>>"));
-		/*-----TIRANDO CABEÇALHO HTTP------*/
-		http_get_response(&cli.con, buf, sizeof(buf));
-		for (i=0;
-		!((buf[i]=='\r')&&(buf[i+1]=='\n')&&(buf[i+2]=='\r')&&(buf[i+3]=='\n'));
-		i++);
-		i+=4;
-		for (j=0;(j+i)<BUFFER_SIZE;j++){
-				buf[j]=buf[j+i];
-			}
-		f_write(&Arquivo, buf,BUFFER_SIZE-(i),(void *)&BW);
-		/*-----FIM TIRANDO CABEÇALHO HTTP------*/
+		//UARTPutString("iniciou a transmissao\n\r>>",sizeof("iniciou a transmissao\n\r>>"));
 		while(http_get_response(&cli.con, buf, sizeof(buf))) {//OBTEM UM OS DADOS
-			if(buf[BUFFER_SIZE-1]!='\0'){
-				res=f_write(&Arquivo, buf,sizeof(buf),(void *)&BW);//GRAVA NO ARQUIVO
-				if(res!=FR_OK)
-					Fat_Error_Handler(res);
+			/*-----TIRANDO CABEÇALHO HTTP------*/
+			if(BW==0){//BW só vai ser 0 quando for a primeira vez q ele entrar aqui, ou quando houver alguma falha
+				for (i=0;
+				!((buf[i]=='\r')&&(buf[i+1]=='\n')&&(buf[i+2]=='\r')&&(buf[i+3]=='\n'));
+				i++);
+				i+=4;
+				for (j=0;(j+i)<BUFFER_SIZE;j++){
+						buf[j]=buf[j+i];
+					}
+				if(buf[BUFFER_SIZE-1]!='\0'){//Verifica se o arquivo é menor que o buffer
+					res=f_write(&Arquivo, buf,BUFFER_SIZE-(i),(void*) &BW);
+					//res=f_write(&Arquivo, buf,sizeof(buf),&BW);//GRAVA NO ARQUIVO
+					if(res!=FR_OK)
+						Fat_Error_Handler(res);
+				}
+				else{
+					for (j=0;buf[j]!='\0';j++);
+					f_write(&Arquivo, buf,j,(void*) &BW);
+				}
 			}
+			/*-----FIM TIRANDO CABEÇALHO HTTP------*/
 			else{
-
-				/*while(buf[i]!='\0'){// DEVE HAVER UMA FORMA MAIS EFICIENTE DE SE FAZER ISSO. ARRUMAR
-					f_write(&Arquivo, &buf[i],1,&BW);
-					i++;
-				}*/
-				for (j=0;buf[j]!='\0';j++);//achar uma função que acha o fim do arquivo pra isso ficar mais rapido
-				f_write(&Arquivo, buf,j,&BW);
+				if(buf[BUFFER_SIZE-1]!='\0'){
+					res=f_write(&Arquivo, buf,sizeof(buf),&BW);//GRAVA NO ARQUIVO
+					if(res!=FR_OK)
+						Fat_Error_Handler(res);
+				}
+				else{
+					for (j=0;buf[j]!='\0';j++);//achar uma função que acha o fim do arquivo pra isso ficar mais rapido
+					f_write(&Arquivo, buf,j,&BW);
+				}
 			}
 		}
 		res=f_close(&Arquivo);
 		if(res!=FR_OK)
 			Fat_Error_Handler(res);
-		//else UARTPutString("Fechou arquivo\n\r>>",20);
 	}
 	else Fat_Error_Handler(res);
 
-
-	UARTPutString("Encerrou a transmissao\n\r>>",28);
-	integridade("C1.TXT","V_D.TXT");
-
+	UARTPutString("Encerrou a Get_File\n\r>>",23);
+	//integridade("C1.TXT","V_D.TXT");
 
 deallocate:
 	tls_connection_free(&cli.con);
@@ -325,8 +333,13 @@ exit:
 
 
 volatile int reconnection_trigger = 0;
-void SSL_Client(void *argument)
+void OTA(void *argument)
 {
+	char Versao;
+	//FIL Arq;
+	//int res;
+	//int BR;
+	char hash_arquivo[32];
   /*
    * 0. Initialize the RNG and the session data
    */
@@ -338,7 +351,6 @@ void SSL_Client(void *argument)
   //mbedtls_net_init(NULL);
   sem_connected = xSemaphoreCreateBinary();
 
-  int res;
 
   InitUART();
   // Limpa a tela do terminal
@@ -347,38 +359,30 @@ void SSL_Client(void *argument)
   // Imprime uma tela de boas-vindas
   UARTPutString("OTA Server iniciou!\n\r>>",23);
 
-  printf_install_putchar(UARTPutChar);
-
-  /*
-  int abc = 10;
-  printf_lib("Teste de printf %d", abc);
-
-  char data;
-  while(1){
-	  UARTGetChar(&data);
-	  UARTPutChar(data);
-	  if (data == 'q') break;
-  }
-  */
+  printf_install_putchar(UARTPutChar);//isso é o driver uart instalado no freertos?
 
   xSemaphoreTake(sem_connected, portMAX_DELAY);
-  Versao();
+  //Obtem arquivo com a versão e hash
+  Get_File(AUTH_REQUEST_VERSION,"Versao.txt");
+  //UARTPutString("Saiu get file\n\r>>",17);
+  //vTaskDelay(1000);
+
+  Get_Version("Versao.txt",&Versao);
+  UARTPutString("Versão = ",9);
+  UARTPutString(Versao+48,1);
+  UARTPutString(" \n\r>>",4);
+  if(Versao>VERSION){
+	  Get_File(AUTH_REQUEST_FIRMWARE,"Gustavo.pdf");
+	  sha256sum("Gustavo.pdf", &hash_arquivo);
+	  Get_Hash("Hash.txt",hash_arquivo);
+	  //Get_File(AUTH_REQUEST_HASH,"Hash.txt");
+	  if(Integridade("Gustavo.pdf", "Hash.txt")==0){
+		  UARTPutString("Iniciar BOOTLOADER!!!\n\r>>",25);
+	  }
+	  //UARTPutString(&hash_arquivo,32);
+  }
   //res=integridade(Download(), Get_Hash());
-  /*TODO
-   * Ao final essa thread tem que fazer +- isso:
-   * char Arquivo_Versao []= versao(); //versao() retorna o nome do arquivo em que se quardou as informações de versao.
-   *
-   * if(get_Version(Arquivo_Versao)>VERSAO_ATUAL){
-   * 	Request=Get_Request(Arquivo_Versao);
-   * 	Hash=Get_Hash(Arquivo_Versão);
-   * 	Firmware=Download_Firmware(Request);
-   * 	if(Integridade(Hash, Firmware)){
-   * 		Bootloader(Firmware);
-   * 	}
-   *
-   *
-   * }
-   */
+
 
   //xSemaphoreGive(sem_connected); ler pra ter certeza
 
