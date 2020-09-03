@@ -367,16 +367,16 @@ void OTA(void *argument)
   //UARTPutString("Saiu get file\n\r>>",17);
   //vTaskDelay(1000);
 
-  Get_Version("Versao.txt",&Versao);
+  Get_Version("Versao.txt",&Versao);// obtem arquivo de versão no servidor
   UARTPutString("Versão = ",9);
   UARTPutString(Versao+48,1);
   UARTPutString(" \n\r>>",4);
-  if(Versao>VERSION){
-	  Get_File(AUTH_REQUEST_FIRMWARE,"Gustavo.pdf");
-	  sha256sum("Gustavo.pdf", &hash_arquivo);
-	  Get_Hash("Hash.txt",hash_arquivo);
-	  //Get_File(AUTH_REQUEST_HASH,"Hash.txt");
-	  if(Integridade("Gustavo.pdf", "Hash.txt")==0){
+  if(Versao>VERSION){//compara versão atual e a do servidor
+	  Get_File(AUTH_REQUEST_FIRMWARE,"Gustavo.pdf");//obtem o firmware
+	  sha256sum("Gustavo.pdf", &hash_arquivo);//teste
+	  Get_Hash("Hash.txt",hash_arquivo);//teste
+	  //Get_File(AUTH_REQUEST_HASH,"Hash.txt");//obtem arquivo contendo o hash
+	  if(Integridade("Gustavo.pdf", "Hash.txt")==0){//verifica integridade
 		  UARTPutString("Iniciar BOOTLOADER!!!\n\r>>",25);
 	  }
 	  //UARTPutString(&hash_arquivo,32);
