@@ -13,7 +13,9 @@
 /* Public definitions ------------------------------------------------------- */
 // Constants and macros
 #define FIRMWARE_PATH 							"firmware.bin"
-#define FIRMWARE_VERSION_PATH 					"version.txt"
+#define FIRMWARE_CURRENT_VERSION_PATH 			"current_version.txt"
+#define FIRMWARE_INTEGRITY_PATH 				"integrity.txt"
+#define FIRMWARE_NEW_VERSION_PATH 				"new_version.txt"
 #define MAX_RETRIES 							300
 #define APP_START_ADDRESS   					0x08008000 //Inicio do setor 1 (FLASH_SECTOR_1)
 #define FLASH_WRITE_SIZE 						0x8U
@@ -32,9 +34,6 @@ typedef enum{
 
 /* Public variables --------------------------------------------------------- */
 // Variables available to upper layers (strongly recommend never using this)
-
-unsigned char fw_current_version; //TALVEZ MANTER ESSAS DUAS VARIÁVEIS EM REGIOES PROTEGIDAS NA FLASH
-unsigned char fw_integrity;
 
 
 /* Public functions --------------------------------------------------------- */
