@@ -21,23 +21,54 @@
 
 /* Private functions - prototypes ------------------------------------------- */
 // Functions that will be used just internally, in this library
-error_bootloader_t get_firmware_version();
+uint32_t get_firmware_version();
 /* Private functions - implementation --------------------------------------- */
 // Functions that will be used just internally, in this library
-error_bootloader_t get_firmware_version(){
-	FRESULT res;
+
+uint64_t uint8_t2uint64_t(uint8_t * vector){
+	uint8_t i;
+	uint64_t result = 0;
+	for(i = 0; i < 8; i++){
+		result <<= 8;
+		result |= (uint64_t)vector[i];
+
+	}
+	return(result);
+}
+uint32_t uint8_t2uint32_t(uint8_t * vector){
+	uint8_t i;
+	uint32_t result = 0;
+	for(i = 0; i < 4; i++){
+		result <<= 8;
+		result |= (uint32_t)vector[i];
+
+	}
+	return(result);
+}
+
+
+
+
+error_bootloader_t get_firmware_version(uint32_t * version){
+	//variables
+	FRESULT error_fat;
+	error_bootloader_t error_control = error_bootloader_none;
 	FIL Arq;
-	unsigned char version = 0;
+	uint8_t buffer[4];
 	unsigned int BR = 0;
-	res = f_open(&Arq, FIRMWARE_VERSION_PATH, FA_READ);
-	if(res == FR_OK){
-		res = f_read(&Arq, (void *) &version, 1, &BR);
-		if(res == FR_OK){
+
+	error_fat = f_open(&Arq, FIRMWARE_VERSION_PATH, FA_READ);
+	if(error_fat == FR_OK){
+		error_fat = f_read(&Arq, buffer, sizeof(version), &BR);
+		if(error_fat == FR_OK){
+			* version = uint8_t2uint32_t(buffer); // Verificar ponteiros aqui
 			f_close(&Arq);
-			return(version);
 		}
 	}
-	return (0);
+	if(error_fat != FR_OK){
+		error_control = error_bootloader_general;
+	}
+	return (error_control);
 }
 error_bootloader_t flash_erase(){
 	error_bootloader_t error_control = error_bootloader_none;
@@ -87,40 +118,42 @@ error_bootloader_t flash_erase(){
 
 error_bootloader_t flash_program(){
 	//variables
-	uint8_t buffer_page[FLASH_PAGE_SIZE];
-	uint32_t bw = 0;
-	FRESULT res;
-	HAL_StatusTypeDef error_control = HAL_OK;
-
+	uint8_t buffer_read[8];
+	uint64_t buffer_write;
+	unsigned int bw = 0;
+	FRESULT error_fat;
+	HAL_StatusTypeDef error_flash = HAL_OK;
+	error_bootloader_t error_control = error_bootloader_none;
 	FIL firmware_bin;
-	unsigned retries = MAX_RETRIES;
 	unsigned long firmware_size = 0;
-	uint32_t i;
+	uint64_t i;
 
 
-	res=f_open(&firmware_bin, FIRMWARE_PATH, FA_READ);
-	if(res == FR_OK){
-
+	error_fat = f_open(&firmware_bin, FIRMWARE_PATH, FA_READ);
+	if(error_fat == FR_OK){
 		firmware_size = f_size(&firmware_bin);
-		for(i = APP_START_ADDRESS; (i < firmware_size) && (retries > 0) ; i += FLASH_PAGE_SIZE){
-
-			res=f_read(&firmware_bin, buffer_page, FLASH_PAGE_SIZE, &bw);
-			if(res == FR_OK){
+		for(i = APP_START_ADDRESS; i < firmware_size ; i += FLASH_WRITE_SIZE){
+			error_fat = f_read(&firmware_bin, buffer_read, FLASH_WRITE_SIZE, &bw);
+			buffer_write = uint8_t2uint64_t(buffer_read);
+			if(error_fat == FR_OK){
 				HAL_FLASH_Unlock(); //Unlocks the flash memory
-				error_control = HAL_FLASH_Program(TYPEPROGRAM, i, buffer_page);
+				error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, i, buffer_write); //esse buffer aqui pode dar problema
 				HAL_FLASH_Lock(); //Locks again the flash memory
-				if(error_control != HAL_OK){
-					Error_Handler();
+				if(error_flash != HAL_OK){
+					error_control = error_bootloader_general;
 				}
-
+			}
+			else{
+				error_control = error_bootloader_general;
 			}
 		}
 
 	}
 	else{
-		return(error_bootloader_general);
+		error_control = error_bootloader_general;
 	}
-
+	f_close(&firmware_bin);
+	return(error_control);
 }
 /* Public functions --------------------------------------------------------- */
 // Implementation of functions that are available to the upper layer
@@ -129,9 +162,9 @@ error_bootloader_t flash_program(){
 
 void bootloader(){
 	uint32_t new_fw_version;
-
-	new_fw_version = get_firmware_version();
-	if((new_fw_version > fw_current_version) || (check_integrity() ==  error_bootloader_app_not_valid)){
+	error_bootloader_t error_control;
+	error_control = get_firmware_version(&new_fw_version);
+	if((new_fw_version > fw_current_version) || (fw_integrity ==  error_bootloader_app_not_valid)){
 		fw_integrity = error_bootloader_app_not_valid;
 		if(flash_erase() != error_bootloader_none){
 			Error_Handler();

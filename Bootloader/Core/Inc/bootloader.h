@@ -12,12 +12,12 @@
 
 /* Public definitions ------------------------------------------------------- */
 // Constants and macros
-#define FIRMWARE_PATH "firmware.bin"
-#define FIRMWARE_VERSION_PATH "version.txt"
-#define MAX_RETRIES 300
-#define APP_START_ADDRESS   0x08008000 //Inicio do setor 1 (FLASH_SECTOR_1)
-#define FLASH_PAGE_SIZE 0x40U
-#define TYPEPROGRAM	FLASH_TYPEPROGRAM_DOUBLEWORD
+#define FIRMWARE_PATH 							"firmware.bin"
+#define FIRMWARE_VERSION_PATH 					"version.txt"
+#define MAX_RETRIES 							300
+#define APP_START_ADDRESS   					0x08008000 //Inicio do setor 1 (FLASH_SECTOR_1)
+#define FLASH_WRITE_SIZE 						0x8U
+#define FLASH_TYPEPROGRAM						FLASH_TYPEPROGRAM_DOUBLEWORD
 /* Public types ------------------------------------------------------------- */
 // Unions, structs, enumerations and other type definitions
 
