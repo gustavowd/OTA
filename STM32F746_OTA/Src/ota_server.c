@@ -37,7 +37,9 @@ error_ota_t write_file_info(uint32_t info, const TCHAR* path);
 error_ota_t sha256sum(const TCHAR* path, unsigned char* saida);
 error_ota_t integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path);
 int http_send_request(struct tls_connection *con, char *req, size_t req_size);
-int http_get_response(struct tls_connection *con, char *resp, size_t resp_size);
+int http_get_response(struct tls_connection *con, unsigned char *resp, size_t resp_size);
+error_ota_t get_file_from_server(char *Request, const TCHAR* Path);
+
 /* Private functions - implementation --------------------------------------- */
 // Functions that will be used just internally, in this library
 void OTA_Error_Handler(char *msg)
@@ -209,7 +211,7 @@ int http_send_request(struct tls_connection *con, char *req, size_t req_size)
 	return ret;
 }
 
-int http_get_response(struct tls_connection *con, char *resp, size_t resp_size)
+int http_get_response(struct tls_connection *con, unsigned char *resp, size_t resp_size)
 {
 	int ret = 0;
 
@@ -229,20 +231,34 @@ int http_get_response(struct tls_connection *con, char *resp, size_t resp_size)
 
 
 
-int Get_File(char *Request, const TCHAR* Path)
+error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 {
+	//variables
+	error_ota_t error_control = error_ota_none;
 	int retries, ret = pdFALSE;
 	int i=0;
-	UARTPutString("Obtendo versão de novo firmware\n\r>>",35);
 	struct hostent *server_addr = NULL;
+	char server_ip_s[16];
+	unsigned long server_ip = *((unsigned long*) server_addr->h_addr);
+	int len = strlen((char *) Request);
+	FRESULT res;
+	FIL Arquivo;
+	unsigned int BW = 0;
+	int j;
+
+	//Establishing conection
+	UARTPutString("Obtendo conexão com o servidor...\n\r>>", 37);
 	if(tls_client_init(&cli)) {
 		OTA_Error_Handler("Falha na inicializacao do cliente\n\r>>");
 		ret = pdFALSE;
+		error_control = error_ota_general;
 		goto exit;
+
 	}
 	if(tls_cert_load(&cli.tls, NULL, SSL_CA_PEM, NULL, NULL)) {
 		OTA_Error_Handler("Falha no Certificado\n\r>>");
 		ret = pdFALSE;
+		error_control = error_ota_general;
 		goto deallocate;
 	}
 	retries = AUTH_SERVER_LOOKUP_RETRIES;
@@ -257,10 +273,10 @@ int Get_File(char *Request, const TCHAR* Path)
 	if(!retries) {
 		OTA_Error_Handler("Maximo alcancadas\n\r>>");
 		ret = pdTRUE;
+		error_control = error_ota_general;
 		goto deallocate;
 	}
-   char server_ip_s[16];
-   unsigned long server_ip = *((unsigned long*) server_addr->h_addr);
+
    // Convert the IP Address into a string.
    sprintf(server_ip_s, "%d.%d.%d.%d", (int)(server_ip & 0xff), (int)((server_ip >> 8) & 0xff),
 		  (int)((server_ip >> 16) & 0xff), (int)((server_ip >> 24) & 0xff));
@@ -268,75 +284,75 @@ int Get_File(char *Request, const TCHAR* Path)
 	if(ret) {
 		OTA_Error_Handler("Falha na conexao TLS\n\r>>");
 		ret = pdFALSE;
+		error_control = error_ota_general;
 		goto deallocate;
 	}
-	//UARTPutString("Conexão Estabelecida\n\r>>",24);
 
-	int len = strlen((char *) Request);
+	UARTPutString("Conexão Estabelecida...\n\r>>",27);
 	if(http_send_request(&cli.con, Request, len) < 0) {
 		OTA_Error_Handler("Falha na requisicao\n\r>>");
 		ret = pdFALSE;
+		error_control = error_ota_general;
 		goto deallocate;
 	}
-	//UARTPutString("Requisição feita\n\r>>",20);
 
-	FRESULT res;
-	FIL Arquivo;
-	uint32_t BW=0;
-	int j;
-	//UARTPutString("Gravando dados\n\r>>",sizeof("Gravando dados\n\r>>"));
-
-	res=f_open(&Arquivo, Path, FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
-	if(res==FR_OK){
+	UARTPutString("Baixando arquivo...\n\r>>",sizeof("Baixando arquivo...\n\r>>"));
+	res = f_open(&Arquivo, Path, FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
+	if(res == FR_OK){
 		//UARTPutString("iniciou a transmissao\n\r>>",sizeof("iniciou a transmissao\n\r>>"));
 		while(http_get_response(&cli.con, buf, sizeof(buf))) {//OBTEM UM OS DADOS
+
 			/*-----TIRANDO CABEÇALHO HTTP------*/
-			if(BW==0){//BW só vai ser 0 quando for a primeira vez q ele entrar aqui, ou quando houver alguma falha
-				for (i=0;
-				!((buf[i]=='\r')&&(buf[i+1]=='\n')&&(buf[i+2]=='\r')&&(buf[i+3]=='\n'));
+			if(BW == 0){//BW só vai ser 0 quando for a primeira vez q ele entrar aqui, ou quando houver alguma falha
+				for (i = 0;
+				!((buf[i] == '\r') && (buf[i + 1] == '\n') && (buf[i + 2] == '\r') && (buf[i + 3] == '\n'));
 				i++);
-				i+=4;
-				for (j=0;(j+i)<BUFFER_SIZE;j++){
-						buf[j]=buf[j+i];
+				i += 4;
+				for (j = 0; (j + i) < BUFFER_SIZE; j++){
+						buf[j] = buf[j + i];
 					}
-				if(buf[BUFFER_SIZE-1]!='\0'){//Verifica se o arquivo é menor que o buffer
-					res=f_write(&Arquivo, buf,BUFFER_SIZE-(i),(void*) &BW);
-					//res=f_write(&Arquivo, buf,sizeof(buf),&BW);//GRAVA NO ARQUIVO
-					if(res!=FR_OK)
-						Fat_Error_Handler(res);
+				if(buf[BUFFER_SIZE - 1] != '\0'){//Verifica se o arquivo é menor que o buffer
+					res = f_write(&Arquivo, buf, BUFFER_SIZE - i, &BW);
+					if(res != FR_OK)
+						error_control = error_ota_general;
 				}
 				else{
-					for (j=0;buf[j]!='\0';j++);
-					f_write(&Arquivo, buf,j,(void*) &BW);
+					for (j = 0; buf[j] != '\0'; j++);
+					f_write(&Arquivo, buf, j, &BW);
 				}
 			}
 			/*-----FIM TIRANDO CABEÇALHO HTTP------*/
+
 			else{
-				if(buf[BUFFER_SIZE-1]!='\0'){
-					res=f_write(&Arquivo, buf,sizeof(buf),&BW);//GRAVA NO ARQUIVO
-					if(res!=FR_OK)
-						Fat_Error_Handler(res);
+				if(buf[BUFFER_SIZE - 1] != '\0'){
+					res = f_write(&Arquivo, buf, sizeof(buf), &BW);//GRAVA NO ARQUIVO
+					if(res != FR_OK)
+						error_control = error_ota_general;
 				}
 				else{
-					for (j=0;buf[j]!='\0';j++);//achar uma função que acha o fim do arquivo pra isso ficar mais rapido
-					f_write(&Arquivo, buf,j,&BW);
+					for (j = 0; buf[j] != '\0'; j++);//achar uma função que acha o fim do arquivo pra isso ficar mais rapido
+					f_write(&Arquivo, buf, j, &BW);
 				}
 			}
 		}
-		res=f_close(&Arquivo);
-		if(res!=FR_OK)
-			Fat_Error_Handler(res);
+		res = f_close(&Arquivo);
+		if(res != FR_OK){
+			error_control = error_ota_general;
+		}
 	}
-	else Fat_Error_Handler(res);
+	else {
+		error_control = error_ota_general;
+	}
 
-	UARTPutString("Encerrou a Get_File\n\r>>",23);
-	//integridade("C1.TXT","V_D.TXT");
-
+	//error_control
+	if(error_control == error_ota_none){
+		UARTPutString("Arquivo obtido com sucesso!\n\r>>",31);
+	}
 deallocate:
 	tls_connection_free(&cli.con);
 	tls_context_free(&cli.tls);
 exit:
-	return ret;
+	return (error_control);
 }
 
 /* Public functions --------------------------------------------------------- */
@@ -373,7 +389,7 @@ void OTA(void *argument){
 		//Get the new firmware version file from server
 		UARTPutString("Downloading new firmware version from server...", 47);
 		UARTPutString(" \n\r>>", 4);
-		Get_File(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
+		get_file_from_server(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
 		//Get the new firmware version from file
 		read_file_info(&new_version, FIRMWARE_NEW_VERSION_PATH);
 
@@ -390,11 +406,11 @@ void OTA(void *argument){
 
 			UARTPutString("Downloading new firmware...", 27);
 			UARTPutString(" \n\r>>", 4);
-			Get_File(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH);//obtem o firmware
+			get_file_from_server(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH);//obtem o firmware
 
 			UARTPutString("Downloading SHA-256 file...", 27);
 			UARTPutString(" \n\r>>", 4);
-			Get_File(AUTH_REQUEST_HASH,FIRMWARE_NEW_VERSION_HASH_PATH);//obtem arquivo contendo o hash
+			get_file_from_server(AUTH_REQUEST_HASH,FIRMWARE_NEW_VERSION_HASH_PATH);//obtem arquivo contendo o hash
 
 			UARTPutString("Checking integrity of firmware on SD card...", 44);
 			UARTPutString(" \n\r>>", 4);
