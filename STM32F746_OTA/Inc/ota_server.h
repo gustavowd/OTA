@@ -50,9 +50,18 @@
 #define BUFFER_SIZE 					512
 #define VERSION 						1
 
+#define FIRMWARE_PATH 					"firmware.bin"
+#define FIRMWARE_CURRENT_VERSION_PATH 	"current_version.txt"
+#define FIRMWARE_INTEGRITY_PATH 		"integrity.txt"
+#define FIRMWARE_NEW_VERSION_PATH 		"new_version.txt"
+
 /* Public types ------------------------------------------------------------- */
 // Unions, structs, enumerations and other type definitions
+typedef enum{
+	error_ota_none,
+	error_ota_general
 
+}error_ota_t;
 /* Public variables --------------------------------------------------------- */
 // Variables available to upper layers (strongly recommend never using this)
 

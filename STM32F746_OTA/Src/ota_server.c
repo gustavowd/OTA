@@ -30,7 +30,10 @@ uint8_t memory_buf[MAX_MEM_SIZE];
 volatile int reconnection_trigger = 0;
 /* Private functions - prototypes ------------------------------------------- */
 // Functions that will be used just internally, in this library
-
+uint32_t uint8_t2uint32_t(uint8_t * vector);
+void uint32_t2uint8_t(uint8_t * vector, uint32_t data);
+error_ota_t read_file_info(uint32_t * version, const TCHAR *path);
+error_ota_t write_file_info(uint32_t version, const TCHAR* path);
 /* Private functions - implementation --------------------------------------- */
 // Functions that will be used just internally, in this library
 void OTA_Error_Handler(char *msg)
@@ -40,6 +43,79 @@ void OTA_Error_Handler(char *msg)
 	UARTPutString(msg,strlen(msg));
   /* USER CODE END Error_Handler_Debug */
 }
+
+uint32_t uint8_t2uint32_t(uint8_t * vector){
+	uint8_t i;
+	uint32_t result = 0;
+	for(i = 0; i < 4; i++){
+		result <<= 8;
+		result |= (uint32_t)vector[i];
+	}
+	return(result);
+}
+void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
+	uint8_t i;
+	for(i = 0; i < 4; i++){
+		vector[i] = (uint8_t)(data & 0x000000FF);
+		data >>= 8;
+	}
+}
+
+
+
+
+error_ota_t read_file_info(uint32_t * info, const TCHAR *path){
+	//variables
+	FRESULT error_fat;
+	error_ota_t error_control = error_ota_none;
+	FIL Arq;
+	uint8_t buffer[4];
+	unsigned int BR = 0;
+
+	//read operation
+	error_fat = f_open(&Arq, path, FA_READ);
+	if(error_fat == FR_OK){
+		error_fat = f_read(&Arq, buffer, sizeof(buffer), &BR);
+		if(error_fat == FR_OK){
+			* info = uint8_t2uint32_t(buffer); // Verificar ponteiros aqui
+		}
+	}
+	f_close(&Arq);
+
+	//error control
+	if(error_fat != FR_OK){
+		error_control = error_ota_general;
+		* info = 0;
+	}
+	return (error_control);
+}
+
+error_ota_t write_file_info(uint32_t info, const TCHAR* path){
+	//variables
+	FRESULT error_fat;
+	error_ota_t error_control = error_ota_none;
+	FIL Arq;
+	uint8_t buffer[4];
+	unsigned int Bw = 0;
+
+	//starting buffer
+	uint32_t2uint8_t(buffer, info);
+
+	//writing operation
+	error_fat = f_open(&Arq, path, FA_WRITE);
+	if(error_fat == FR_OK){
+		error_fat = f_write(&Arq, buffer, sizeof(buffer), &Bw);
+	}
+	f_close(&Arq);
+
+	//error control
+	if(error_fat != FR_OK){
+		error_control = error_ota_general;
+	}
+	return (error_control);
+}
+
+
 void Get_Version(const TCHAR* path, char * Saida){
 	FRESULT res;
 	FIL Arq;
@@ -284,13 +360,10 @@ exit:
 /* Public functions --------------------------------------------------------- */
 // Implementation of functions that are available to the upper layer
 
-void OTA(void *argument)
-{
-	char Versao;
-	//FIL Arq;
-	//int res;
-	//int BR;
-	char hash_arquivo[32];
+void OTA(void *argument){
+	//Variables
+	uint32_t Versao;
+	uint8_t hash_arquivo[32];
   /*
    * 0. Initialize the RNG and the session data
    */
@@ -298,27 +371,24 @@ void OTA(void *argument)
   mbedtls_memory_buffer_alloc_init(memory_buf, sizeof(memory_buf));
 #endif
 
-  // Não precisa essa linha pq configura no vnc player
-  //mbedtls_net_init(NULL);
+  //create semaphore
   sem_connected = xSemaphoreCreateBinary();
 
-
+  //Initialize UART driver
   InitUART();
-  // Limpa a tela do terminal
-  UARTPutString("\033[2J\033[H",0);
+  // clean terminal
+  UARTPutString("\033[2J\033[H", 0);
 
-  // Imprime uma tela de boas-vindas
-  UARTPutString("OTA Server iniciou!\n\r>>",23);
+  // print welcome message
+  UARTPutString("OTA Server iniciou!\n\r>>", 23);
 
   printf_install_putchar(UARTPutChar);//isso é o driver uart instalado no freertos?
 
   xSemaphoreTake(sem_connected, portMAX_DELAY);
   //Obtem arquivo com a versão e hash
-  Get_File(AUTH_REQUEST_VERSION,"Versao.txt");
-  //UARTPutString("Saiu get file\n\r>>",17);
-  //vTaskDelay(1000);
+  Get_File(AUTH_REQUEST_VERSION, "Versao.txt");
 
-  Get_Version("Versao.txt",&Versao);// obtem arquivo de versão no servidor
+  Get_Version(FIRMWARE_CURRENT_VERSION_PATH, &Versao);// obtem arquivo de versão no servidor
   UARTPutString("Versão = ",9);
   UARTPutString(Versao+48,1);
   UARTPutString(" \n\r>>",4);
@@ -335,7 +405,7 @@ void OTA(void *argument)
   //res=integridade(Download(), Get_Hash());
 
 
-  //xSemaphoreGive(sem_connected); ler pra ter certeza
+  xSemaphoreGive(sem_connected); //ler pra ter certeza
 
   while(1){
 	  vTaskDelay(10000);
