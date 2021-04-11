@@ -34,6 +34,10 @@ uint32_t uint8_t2uint32_t(uint8_t * vector);
 void uint32_t2uint8_t(uint8_t * vector, uint32_t data);
 error_ota_t read_file_info(uint32_t * info, const TCHAR *path);
 error_ota_t write_file_info(uint32_t info, const TCHAR* path);
+error_ota_t sha256sum(const TCHAR* path, unsigned char* saida);
+error_ota_t integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path);
+int http_send_request(struct tls_connection *con, char *req, size_t req_size);
+int http_get_response(struct tls_connection *con, char *resp, size_t resp_size);
 /* Private functions - implementation --------------------------------------- */
 // Functions that will be used just internally, in this library
 void OTA_Error_Handler(char *msg)
@@ -112,22 +116,7 @@ error_ota_t write_file_info(uint32_t info, const TCHAR* path){
 	return (error_control);
 }
 
-void Get_Hash(const TCHAR* path, char * Saida){
-	FRESULT res;
-	FIL Arq;
-	int BR=0;
 
-
-	res=f_open(&Arq, path, FA_CREATE_ALWAYS | FA_WRITE);
-	if(res!=FR_OK)
-		Fat_Error_Handler(res);
-	res=f_write(&Arq,&Saida,32,&BR);
-	if(res!=FR_OK)
-			Fat_Error_Handler(res);
-	res=f_close(&Arq);
-	if(res!=FR_OK)
-			Fat_Error_Handler(res);
-}
 error_ota_t sha256sum(const TCHAR* path, unsigned char* saida){
 	//Variables
 	error_ota_t error_control = error_ota_none;
@@ -402,10 +391,6 @@ void OTA(void *argument){
 			UARTPutString("Downloading new firmware...", 27);
 			UARTPutString(" \n\r>>", 4);
 			Get_File(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH);//obtem o firmware
-
-			//UARTPutString("Generating SHA-256...", 21);
-			//UARTPutString(" \n\r>>", 4);
-			//sha256sum(FIRMWARE_PATH, &hash_arquivo);//teste
 
 			UARTPutString("Downloading SHA-256 file...", 27);
 			UARTPutString(" \n\r>>", 4);
