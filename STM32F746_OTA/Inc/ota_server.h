@@ -10,6 +10,7 @@
 
 /* Includes ----------------------------------------------------------------- */
 // All dependencies
+
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
@@ -39,7 +40,6 @@
 // Constants and macros
 #define FIRMWARE_PATH 					"firmware.bin"
 #define FIRMWARE_CURRENT_VERSION_PATH 	"current_version.bin"
-#define FIRMWARE_INTEGRITY_PATH 		"integrity.bin"
 #define FIRMWARE_NEW_VERSION_PATH 		"new_version.bin"
 #define FIRMWARE_NEW_VERSION_HASH_PATH 	"hash.bin"
 
@@ -55,7 +55,7 @@
 #define BUFFER_SIZE 					512
 #define VERSION 						1
 
-#define DEBUG_MODE_OTA
+//#define DEBUG_MODE_OTA
 
 
 /* Public types ------------------------------------------------------------- */

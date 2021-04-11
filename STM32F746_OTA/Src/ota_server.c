@@ -360,6 +360,7 @@ exit:
 
 void OTA(void *argument){
 	//Variables
+	error_ota_t error_control = error_ota_general;
 	uint32_t current_version;
 	uint32_t new_version;
 	/*
@@ -385,43 +386,65 @@ void OTA(void *argument){
 		xSemaphoreTake(sem_connected, portMAX_DELAY);
 
 		//Get the current version of the firmware from file
-		read_file_info(&current_version, FIRMWARE_CURRENT_VERSION_PATH);
+		error_control = read_file_info(&current_version, FIRMWARE_CURRENT_VERSION_PATH);
 		//Get the new firmware version file from server
 		UARTPutString("Downloading new firmware version from server...", 47);
 		UARTPutString(" \n\r>>", 4);
-		get_file_from_server(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
-		//Get the new firmware version from file
-		read_file_info(&new_version, FIRMWARE_NEW_VERSION_PATH);
-
-		//show current version on uart
-		UARTPutString("Current firmware version: ", 26);
-		UARTPutString(current_version + 48, 3);
-		UARTPutString(" \n\r>>", 4);
-		//show current version on uart
-		UARTPutString("new firmware version: ", 22);
-		UARTPutString(new_version + 48, 3);
-		UARTPutString(" \n\r>>", 4);
-
-		if(new_version > current_version){//compara versão atual e a do servidor
+		if(get_file_from_server(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH) == error_ota_none){
+			//Get the new firmware version from file
+			error_control = read_file_info(&new_version, FIRMWARE_NEW_VERSION_PATH);
+			//Remove files from SD card
+			f_unlink(FIRMWARE_NEW_VERSION_PATH);
+			//show current version on uart
+			UARTPutString("Current firmware version: ", 26);
+			UARTPutString(current_version + 48, 3);
+			UARTPutString(" \n\r>>", 4);
+			//show current version on uart
+			UARTPutString("new firmware version: ", 22);
+			UARTPutString(new_version + 48, 3);
+			UARTPutString(" \n\r>>", 4);
+		}
+		else{
+			error_control = error_ota_general;
+			UARTPutString("Error getting version file!", 27);
+			UARTPutString(" \n\r>>", 4);
+		}
+		if((new_version > current_version) && (error_control == error_ota_none)){//compara versão atual e a do servidor
 
 			UARTPutString("Downloading new firmware...", 27);
 			UARTPutString(" \n\r>>", 4);
-			get_file_from_server(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH);//obtem o firmware
-
-			UARTPutString("Downloading SHA-256 file...", 27);
-			UARTPutString(" \n\r>>", 4);
-			get_file_from_server(AUTH_REQUEST_HASH,FIRMWARE_NEW_VERSION_HASH_PATH);//obtem arquivo contendo o hash
-
-			UARTPutString("Checking integrity of firmware on SD card...", 44);
-			UARTPutString(" \n\r>>", 4);
-			if(integrity(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH)==0){//verifica integridade
-				UARTPutString("Restarting to Bootloader...",27);
+			if(get_file_from_server(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH) == error_ota_none){//obtem o firmware
+				UARTPutString("Downloading SHA-256 file...", 27);
 				UARTPutString(" \n\r>>", 4);
-				Reset_Handler(); //Pode ser que isso faça o programa só reiniciar, não ir ao bootloader
+				if(get_file_from_server(AUTH_REQUEST_HASH,FIRMWARE_NEW_VERSION_HASH_PATH) == error_ota_none){//obtem arquivo contendo o hash
+
+					UARTPutString("Checking integrity of firmware on SD card...", 44);
+					UARTPutString(" \n\r>>", 4);
+					if(integrity(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH) == error_ota_none){//verifica integridade
+						f_unlink(FIRMWARE_NEW_VERSION_HASH_PATH);
+						UARTPutString("Restarting to Bootloader...",27);
+						UARTPutString(" \n\r>>", 4);
+						Reset_Handler(); //Pode ser que isso faça o programa só reiniciar, não ir ao bootloader
+					}
+					else{
+						UARTPutString("Atualization fail!",18);
+						UARTPutString(" \n\r>>", 4);
+						f_unlink(FIRMWARE_PATH);
+						f_unlink(FIRMWARE_NEW_VERSION_HASH_PATH);
+					}
+				}
+				else{
+					UARTPutString("Hash download fail!", 19);
+					UARTPutString(" \n\r>>", 4);
+				}
+			}
+			else{
+				UARTPutString("Firmware download fail!", 23);
+				UARTPutString(" \n\r>>", 4);
 			}
 		}
-		xSemaphoreGive(sem_connected); //ler pra ter certeza
 
+		xSemaphoreGive(sem_connected);
 		vTaskDelay(10000);
 	}
 }
