@@ -32,8 +32,8 @@ volatile int reconnection_trigger = 0;
 // Functions that will be used just internally, in this library
 uint32_t uint8_t2uint32_t(uint8_t * vector);
 void uint32_t2uint8_t(uint8_t * vector, uint32_t data);
-error_ota_t read_file_info(uint32_t * version, const TCHAR *path);
-error_ota_t write_file_info(uint32_t version, const TCHAR* path);
+error_ota_t read_file_info(uint32_t * info, const TCHAR *path);
+error_ota_t write_file_info(uint32_t info, const TCHAR* path);
 /* Private functions - implementation --------------------------------------- */
 // Functions that will be used just internally, in this library
 void OTA_Error_Handler(char *msg)
@@ -60,9 +60,6 @@ void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 		data >>= 8;
 	}
 }
-
-
-
 
 error_ota_t read_file_info(uint32_t * info, const TCHAR *path){
 	//variables
@@ -115,21 +112,6 @@ error_ota_t write_file_info(uint32_t info, const TCHAR* path){
 	return (error_control);
 }
 
-
-void Get_Version(const TCHAR* path, char * Saida){
-	FRESULT res;
-	FIL Arq;
-	int BR=0;
-	res=f_open(&Arq, "Versao.txt",FA_READ);
-	if(res!=FR_OK)
-		Fat_Error_Handler(res);
-	res=f_read(&Arq,&Saida,1,&BR);
-	if(res!=FR_OK)
-		Fat_Error_Handler(res);
-	res=f_close(&Arq);
-	if(res!=FR_OK)
-		Fat_Error_Handler(res);
-}
 void Get_Hash(const TCHAR* path, char * Saida){
 	FRESULT res;
 	FIL Arq;
@@ -251,7 +233,7 @@ int Get_File(char *Request, const TCHAR* Path)
 {
 	int retries, ret = pdFALSE;
 	int i=0;
-	UARTPutString("Get_File iniciada\n\r>>",21);
+	UARTPutString("Obtendo versão de novo firmware\n\r>>",35);
 	struct hostent *server_addr = NULL;
 	if(tls_client_init(&cli)) {
 		OTA_Error_Handler("Falha na inicializacao do cliente\n\r>>");
@@ -362,54 +344,74 @@ exit:
 
 void OTA(void *argument){
 	//Variables
-	uint32_t Versao;
+	uint32_t current_version;
+	uint32_t new_version;
 	uint8_t hash_arquivo[32];
-  /*
-   * 0. Initialize the RNG and the session data
-   */
+	/*
+	* 0. Initialize the RNG and the session data
+	*/
 #ifdef MBEDTLS_MEMORY_BUFFER_ALLOC_C
   mbedtls_memory_buffer_alloc_init(memory_buf, sizeof(memory_buf));
 #endif
 
-  //create semaphore
-  sem_connected = xSemaphoreCreateBinary();
+	//create semaphore
+	sem_connected = xSemaphoreCreateBinary();
 
-  //Initialize UART driver
-  InitUART();
-  // clean terminal
-  UARTPutString("\033[2J\033[H", 0);
+	//Initialize UART driver
+	InitUART();
+	// clean terminal
+	UARTPutString("\033[2J\033[H", 0);
 
-  // print welcome message
-  UARTPutString("OTA Server iniciou!\n\r>>", 23);
+	// print welcome message
+	UARTPutString("OTA Server iniciou!\n\r>>", 23);
 
-  printf_install_putchar(UARTPutChar);//isso é o driver uart instalado no freertos?
+	printf_install_putchar(UARTPutChar);//isso é o driver uart instalado no freertos?
+	while(1){
+		xSemaphoreTake(sem_connected, portMAX_DELAY);
 
-  xSemaphoreTake(sem_connected, portMAX_DELAY);
-  //Obtem arquivo com a versão e hash
-  Get_File(AUTH_REQUEST_VERSION, "Versao.txt");
+		//Get the current version of the firmware from file
+		read_file_info(&current_version, FIRMWARE_CURRENT_VERSION_PATH);
+		//Get the new firmware version file from server
+		Get_File(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
+		//Get the new firmware version from file
+		read_file_info(&new_version, FIRMWARE_NEW_VERSION_PATH);
 
-  Get_Version(FIRMWARE_CURRENT_VERSION_PATH, &Versao);// obtem arquivo de versão no servidor
-  UARTPutString("Versão = ",9);
-  UARTPutString(Versao+48,1);
-  UARTPutString(" \n\r>>",4);
-  if(Versao>VERSION){//compara versão atual e a do servidor
-	  Get_File(AUTH_REQUEST_FIRMWARE,"Gustavo.pdf");//obtem o firmware
-	  sha256sum("Gustavo.pdf", &hash_arquivo);//teste
-	  Get_Hash("Hash.txt",hash_arquivo);//teste
-	  //Get_File(AUTH_REQUEST_HASH,"Hash.txt");//obtem arquivo contendo o hash
-	  if(Integridade("Gustavo.pdf", "Hash.txt")==0){//verifica integridade
-		  UARTPutString("Iniciar BOOTLOADER!!!\n\r>>",25);
-	  }
-	  //UARTPutString(&hash_arquivo,32);
-  }
-  //res=integridade(Download(), Get_Hash());
+		//show current version on uart
+		UARTPutString("Current firmware version: ", 26);
+		UARTPutString(current_version + 48, 3);
+		UARTPutString(" \n\r>>", 4);
+		//show current version on uart
+		UARTPutString("new firmware version: ", 22);
+		UARTPutString(new_version + 48, 3);
+		UARTPutString(" \n\r>>", 4);
 
+		if(new_version > current_version){//compara versão atual e a do servidor
 
-  xSemaphoreGive(sem_connected); //ler pra ter certeza
+			UARTPutString("Downloading new firmware...", 27);
+			UARTPutString(" \n\r>>", 4);
+			Get_File(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH);//obtem o firmware
 
-  while(1){
-	  vTaskDelay(10000);
-  }
+			UARTPutString("Generating SHA-256...", 21);
+			UARTPutString(" \n\r>>", 4);
+			sha256sum(FIRMWARE_PATH, &hash_arquivo);//teste
+
+			UARTPutString("Downloading SHA-256 file...", 27);
+			UARTPutString(" \n\r>>", 4);
+			//Get_Hash("Hash.txt",hash_arquivo);//teste
+			Get_File(AUTH_REQUEST_HASH,FIRMWARE_NEW_VERSION_HASH_PATH);//obtem arquivo contendo o hash
+
+			UARTPutString("Checking integrity of firmware on SD card...", 44);
+			UARTPutString(" \n\r>>", 4);
+			if(Integridade(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH)==0){//verifica integridade
+				UARTPutString("Restarting to Bootloader...",27);
+				UARTPutString(" \n\r>>", 4);
+				Reset_Handler(); //Pode ser que isso faça o programa só reiniciar, não ir ao bootloader
+			}
+		}
+		xSemaphoreGive(sem_connected); //ler pra ter certeza
+
+		vTaskDelay(10000);
+	}
 }
 
 

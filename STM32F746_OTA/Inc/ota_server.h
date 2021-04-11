@@ -37,23 +37,25 @@
 #include "sha256.h"
 /* Public definitions ------------------------------------------------------- */
 // Constants and macros
+#define FIRMWARE_PATH 					"firmware.bin"
+#define FIRMWARE_CURRENT_VERSION_PATH 	"current_version.bin"
+#define FIRMWARE_INTEGRITY_PATH 		"integrity.bin"
+#define FIRMWARE_NEW_VERSION_PATH 		"new_version.bin"
+#define FIRMWARE_NEW_VERSION_HASH_PATH 	"hash.bin"
 
-#define AUTH_SERVER 					"192.168.0.121"//moodle.pb.utfpr.edu.br
+#define AUTH_SERVER 					"192.168.0.121"
 #define AUTH_PORT 						443
 #define AUTH_SERVER_LOOKUP_RETRIES 		5
 
-#define AUTH_REQUEST_VERSION "GET /files/Version.TXT HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-#define AUTH_REQUEST_FIRMWARE "GET /files/Gustavo.pdf HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-#define AUTH_REQUEST_HASH "GET /Hash.txt HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_VERSION 	"GET /" FIRMWARE_NEW_VERSION_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_FIRMWARE 	"GET /" FIRMWARE_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_HASH 		"GET /" FIRMWARE_NEW_VERSION_HASH_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 
 #define AUTH_REQUEST_BUFFER_SIZE 		512
 #define BUFFER_SIZE 					512
 #define VERSION 						1
 
-#define FIRMWARE_PATH 					"firmware.bin"
-#define FIRMWARE_CURRENT_VERSION_PATH 	"current_version.txt"
-#define FIRMWARE_INTEGRITY_PATH 		"integrity.txt"
-#define FIRMWARE_NEW_VERSION_PATH 		"new_version.txt"
+
 
 /* Public types ------------------------------------------------------------- */
 // Unions, structs, enumerations and other type definitions
