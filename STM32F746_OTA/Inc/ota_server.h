@@ -55,6 +55,7 @@
 #define BUFFER_SIZE 					512
 #define VERSION 						1
 
+#define DEBUG_MODE
 
 
 /* Public types ------------------------------------------------------------- */

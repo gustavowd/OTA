@@ -148,50 +148,51 @@ void sha256sum(const TCHAR* path, unsigned char* saida){
 	}
 
 	mbedtls_sha256_finish_ret(&Contexto, saida);//grava em saida o hash
-	/*
-	if(mbedtls_sha256_update_ret(&Contexto,&Arq, f_size(&Arq))==0){//adiciona o arquivo
-		if(mbedtls_sha256_starts_ret(&Contexto, 0)==0){ //inicia o calculo
-			if(mbedtls_sha256_finish_ret(&Contexto, saida)==0){//termina e grava o resultado na saida
-			}else {mbedtls_sha256_free(&Contexto);UARTPutString("Erro finish\n\r",13);}
-		}else {mbedtls_sha256_free(&Contexto);UARTPutString("Erro start\n\r",12);}
-	}else {mbedtls_sha256_free(&Contexto);UARTPutString("Erro update\n\r",13);}*/
 	f_close(&Arq);
 	mbedtls_sha256_free(&Contexto);
+	UARTPutString("SHA-256 Gerado: ",4);
 	UARTPutString(saida, 32);
 	UARTPutString("\n\r>>",4);
-	//mbedtls_sha256_ret(Entrada,sizeof(Entrada), saida,0 );
 }
-int Integridade(const TCHAR* Firmware_path, const TCHAR* Versao_path){
-	unsigned char Saida_Firmware[32],Saida_Versao[32];
-	FIL Versao;
-	int i, BW;
-	sha256sum(Firmware_path,Saida_Firmware);//obtem o hash do firmware
-	//sha256sum_teste(Versao_path,Saida_Versao);
 
+error_ota_t Integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
+	//Variables
+	error_ota_t error_control = error_ota_none;
+	unsigned char Saida_Firmware[32], Saida_Versao[32];
+	FIL Versao;
+	unsigned int i, BW;
+
+	//Getting SHA-256 from firmware
+	sha256sum(Firmware_path, Saida_Firmware);//obtem o hash do firmware
+
+	//Getting SHA-256 from file
 	f_open(&Versao, Versao_path, FA_READ);
-	f_read(&Versao, Saida_Versao, 32,(void *) &BW);//Obtem o hash do firmware do arquivo do servidor
+	f_read(&Versao, Saida_Versao, 32, &BW);//Obtem o hash do firmware do arquivo do servidor
 	f_close(&Versao);
-	//int flag=0;
-	for(i=0;i<32;i++){// só testando depois melhoro
-		if(Saida_Firmware[i]!=Saida_Versao[i]){
-			UARTPutString("Hash de A = ",12);
-			UARTPutString(Saida_Firmware, 32);
-			UARTPutString("\n\r>>",4);
-			UARTPutString("Hash de B = ",12);
-			UARTPutString(Saida_Versao, 32);
-			UARTPutString("\n\r>>",4);
-			UARTPutString("Falha no teste de integridade\n\r>>",33);
-			return(1);
+
+	//Comparing hash
+	for(i = 0; i < 32; i++){// só testando depois melhoro
+		if(Saida_Firmware[i] != Saida_Versao[i]){
+			error_control = error_ota_general;
 		}
 	}
+#ifdef DEBUG_MODE
 	UARTPutString("Hash de A = ",12);
 	UARTPutString(Saida_Firmware, 32);
 	UARTPutString("\n\r>>",4);
 	UARTPutString("Hash de B = ",12);
 	UARTPutString(Saida_Versao, 32);
 	UARTPutString("\n\r>>",4);
-	UARTPutString("Sucesso no teste de integridade\n\r>>",35);
-	return(0);
+#endif
+
+	//error control
+	if(error_control == error_ota_general){
+		UARTPutString("Falha no teste de integridade\n\r>>", 33);
+	}
+	else{
+		UARTPutString("Sucesso no teste de integridade\n\r>>", 35);
+	}
+	return(error_control);
 }
 
 int http_send_request(struct tls_connection *con, char *req, size_t req_size)
@@ -372,6 +373,8 @@ void OTA(void *argument){
 		//Get the current version of the firmware from file
 		read_file_info(&current_version, FIRMWARE_CURRENT_VERSION_PATH);
 		//Get the new firmware version file from server
+		UARTPutString("Downloading new firmware version from server...", 47);
+		UARTPutString(" \n\r>>", 4);
 		Get_File(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
 		//Get the new firmware version from file
 		read_file_info(&new_version, FIRMWARE_NEW_VERSION_PATH);
@@ -391,18 +394,17 @@ void OTA(void *argument){
 			UARTPutString(" \n\r>>", 4);
 			Get_File(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH);//obtem o firmware
 
-			UARTPutString("Generating SHA-256...", 21);
-			UARTPutString(" \n\r>>", 4);
-			sha256sum(FIRMWARE_PATH, &hash_arquivo);//teste
+			//UARTPutString("Generating SHA-256...", 21);
+			//UARTPutString(" \n\r>>", 4);
+			//sha256sum(FIRMWARE_PATH, &hash_arquivo);//teste
 
 			UARTPutString("Downloading SHA-256 file...", 27);
 			UARTPutString(" \n\r>>", 4);
-			//Get_Hash("Hash.txt",hash_arquivo);//teste
 			Get_File(AUTH_REQUEST_HASH,FIRMWARE_NEW_VERSION_HASH_PATH);//obtem arquivo contendo o hash
 
 			UARTPutString("Checking integrity of firmware on SD card...", 44);
 			UARTPutString(" \n\r>>", 4);
-			if(Integridade(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH)==0){//verifica integridade
+			if(Integrity(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH)==0){//verifica integridade
 				UARTPutString("Restarting to Bootloader...",27);
 				UARTPutString(" \n\r>>", 4);
 				Reset_Handler(); //Pode ser que isso faça o programa só reiniciar, não ir ao bootloader
