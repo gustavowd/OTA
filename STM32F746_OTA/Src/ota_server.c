@@ -128,34 +128,44 @@ void Get_Hash(const TCHAR* path, char * Saida){
 	if(res!=FR_OK)
 			Fat_Error_Handler(res);
 }
-void sha256sum(const TCHAR* path, unsigned char* saida){
+error_ota_t sha256sum(const TCHAR* path, unsigned char* saida){
+	//Variables
+	error_ota_t error_control = error_ota_none;
 	mbedtls_sha256_context Contexto;
-	uint8_t buffer[512];
+	uint8_t buffer[BUFFER_SIZE];
 	FIL Arq;
 	FRESULT rec;
-	int BW,lido=0;
+	unsigned int BW,lido=0;
+
+	//Generating the hash
 	rec=f_open(&Arq, path, FA_READ);//abre o arquivo pra leitura
-	if(rec!=FR_OK)
-		Fat_Error_Handler(rec);
+	if(rec!=FR_OK){
+		error_control = error_ota_general;
+	}
 	mbedtls_sha256_init(&Contexto);//inicia o contexto
 	mbedtls_sha256_starts_ret(&Contexto, 0);//inicia o sha256
-	while (lido <f_size(&Arq)){
-		rec=f_read(&Arq, buffer,512,&BW);//adiciona ao buffer 512 bits do arquivo
-		if(rec!=FR_OK)
-				Fat_Error_Handler(rec);
-		mbedtls_sha256_update_ret(&Contexto,buffer,BW); //adiciona o buffer ao sha256
-		lido+=BW;
+	while (lido < f_size(&Arq)){
+		rec = f_read(&Arq, buffer, BUFFER_SIZE, &BW);//adiciona ao buffer 512 bits do arquivo
+		if(rec != FR_OK){
+			error_control = error_ota_general;
+		}
+		mbedtls_sha256_update_ret(&Contexto, buffer, BW); //adiciona o buffer ao sha256
+		lido += BW;
 	}
-
 	mbedtls_sha256_finish_ret(&Contexto, saida);//grava em saida o hash
 	f_close(&Arq);
 	mbedtls_sha256_free(&Contexto);
+
+	//error control
+#ifdef DEBUG_MODE_OTA
 	UARTPutString("SHA-256 Gerado: ",4);
 	UARTPutString(saida, 32);
 	UARTPutString("\n\r>>",4);
+#endif
+	return(error_control);
 }
 
-error_ota_t Integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
+error_ota_t integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 	//Variables
 	error_ota_t error_control = error_ota_none;
 	unsigned char Saida_Firmware[32], Saida_Versao[32];
@@ -163,7 +173,7 @@ error_ota_t Integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 	unsigned int i, BW;
 
 	//Getting SHA-256 from firmware
-	sha256sum(Firmware_path, Saida_Firmware);//obtem o hash do firmware
+	error_control = sha256sum(Firmware_path, Saida_Firmware);//obtem o hash do firmware
 
 	//Getting SHA-256 from file
 	f_open(&Versao, Versao_path, FA_READ);
@@ -176,7 +186,7 @@ error_ota_t Integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 			error_control = error_ota_general;
 		}
 	}
-#ifdef DEBUG_MODE
+#ifdef DEBUG_MODE_OTA
 	UARTPutString("Hash de A = ",12);
 	UARTPutString(Saida_Firmware, 32);
 	UARTPutString("\n\r>>",4);
@@ -347,7 +357,6 @@ void OTA(void *argument){
 	//Variables
 	uint32_t current_version;
 	uint32_t new_version;
-	uint8_t hash_arquivo[32];
 	/*
 	* 0. Initialize the RNG and the session data
 	*/
@@ -404,7 +413,7 @@ void OTA(void *argument){
 
 			UARTPutString("Checking integrity of firmware on SD card...", 44);
 			UARTPutString(" \n\r>>", 4);
-			if(Integrity(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH)==0){//verifica integridade
+			if(integrity(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH)==0){//verifica integridade
 				UARTPutString("Restarting to Bootloader...",27);
 				UARTPutString(" \n\r>>", 4);
 				Reset_Handler(); //Pode ser que isso faça o programa só reiniciar, não ir ao bootloader
