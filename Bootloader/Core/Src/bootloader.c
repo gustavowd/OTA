@@ -10,6 +10,7 @@
 #include "bootloader.h"
 #include "fatfs.h"
 #include "stm32f7xx_hal.h"
+
 /* Private definitions ------------------------------------------------------ */
 // Constants and macros
 
@@ -232,7 +233,7 @@ void bootloader(){
 		write_file_info(error_bootloader_none, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
 		write_file_info(fw_new_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH);
 	}
-
+	f_unlink(FIRMWARE_PATH);
 	//jump to application
 
 	//MX_GPIO_Deinit(); //Puts GPIOs in default state
