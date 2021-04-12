@@ -64,7 +64,7 @@ RAM (xrw)       : ORIGIN = 0x200114EC, LENGTH = 0x3EB14*/
 /* Specify the memory areas */
 MEMORY
 {
-FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 1024K
+FLASH (rx)      : ORIGIN = 0x08008000, LENGTH = 992K
 Memory1 (xrw)   : ORIGIN = 0x20000000, LENGTH = 0xA0
 Memory2 (xrw)   : ORIGIN = 0x200000A0, LENGTH = 0xA0
 Memory3 (xrw)   : ORIGIN = 0x20000140, LENGTH = 0x1dc4

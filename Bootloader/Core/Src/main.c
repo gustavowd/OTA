@@ -20,7 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "fatfs.h"
-
+#include "bootloader.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -100,7 +100,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  bootloader();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -226,7 +226,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-
+	Reset_Handler();
   /* USER CODE END Error_Handler_Debug */
 }
 

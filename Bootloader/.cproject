@@ -41,7 +41,7 @@
                             							
                             <option id="fr.ac6.managedbuild.option.gnu.cross.board.2123640739" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board" value="Bootloader" valueType="string"/>
                             							
-                            <option id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core" valueType="stringList">
+                            <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core" valueType="stringList">
                                 								
                                 <listOptionValue builtIn="false" value="ARM Cortex-M7"/>
                                 								
@@ -73,7 +73,7 @@
                                 								
                                 <option id="gnu.c.compiler.option.debugging.level.626872949" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
                                 								
-                                <option id="gnu.c.compiler.option.include.paths.100308733" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.100308733" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="../FATFS/Target"/>
                                     									
@@ -93,7 +93,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="gnu.c.compiler.option.preprocessor.def.symbols.833029658" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.833029658" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
                                     									
                                     <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
                                     									
@@ -101,7 +101,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other.1233064098" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other" value="-fmessage-length=0" valueType="string"/>
+                                <option id="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other.1233064098" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string"/>
                                 								
                                 <inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1512540920" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
                                 								
@@ -115,7 +115,7 @@
                                 								
                                 <option id="gnu.cpp.compiler.option.debugging.level.1491004224" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.include.paths.610800255" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.610800255" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="../FATFS/Target"/>
                                     									
@@ -135,7 +135,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="gnu.cpp.compiler.option.preprocessor.def.1410424938" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.1410424938" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
                                     									
                                     <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
                                     									
@@ -143,7 +143,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other.1495757598" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other" value="-fmessage-length=0" valueType="string"/>
+                                <option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other.1495757598" name="Other flags" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string"/>
                                 								
                                 <inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1682208201" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
                                 								
@@ -155,13 +155,13 @@
                                 								
                                 <option id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script.1827510994" name="Linker Script (-T)" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script" value="../STM32F746NGHx_FLASH.ld" valueType="string"/>
                                 								
-                                <option id="gnu.c.link.option.libs.289804005" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs"/>
+                                <option id="gnu.c.link.option.libs.289804005" name="Libraries (-l)" superClass="gnu.c.link.option.libs"/>
                                 								
-                                <option id="gnu.c.link.option.paths.880699822" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths"/>
+                                <option id="gnu.c.link.option.paths.880699822" name="Library search path (-L)" superClass="gnu.c.link.option.paths"/>
                                 								
-                                <option id="gnu.c.link.option.ldflags.157922522" superClass="gnu.c.link.option.ldflags" value="-specs=nosys.specs -specs=nano.specs" valueType="string"/>
+                                <option id="gnu.c.link.option.ldflags.157922522" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="-specs=nosys.specs -specs=nano.specs" valueType="string"/>
                                 								
-                                <option id="gnu.c.link.option.other.410122880" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" useByScannerDiscovery="false" valueType="stringList"/>
+                                <option id="gnu.c.link.option.other.410122880" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" useByScannerDiscovery="false"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.c.linker.input.2080431479" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
                                     									
@@ -177,13 +177,13 @@
                                 								
                                 <option id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.script.1884944842" name="Linker Script (-T)" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.script" value="../STM32F746NGHx_FLASH.ld" valueType="string"/>
                                 								
-                                <option id="gnu.cpp.link.option.libs.1224112005" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs"/>
+                                <option id="gnu.cpp.link.option.libs.1224112005" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs"/>
                                 								
-                                <option id="gnu.cpp.link.option.paths.1440910367" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths"/>
+                                <option id="gnu.cpp.link.option.paths.1440910367" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths"/>
                                 								
-                                <option id="gnu.cpp.link.option.flags.1765769161" superClass="gnu.cpp.link.option.flags" value="-specs=nosys.specs -specs=nano.specs" valueType="string"/>
+                                <option id="gnu.cpp.link.option.flags.1765769161" name="Linker flags" superClass="gnu.cpp.link.option.flags" value="-specs=nosys.specs -specs=nano.specs" valueType="string"/>
                                 								
-                                <option id="gnu.cpp.link.option.other.1026650792" name="Other options (-Xlinker [option])" superClass="gnu.cpp.link.option.other" useByScannerDiscovery="false" valueType="stringList"/>
+                                <option id="gnu.cpp.link.option.other.1026650792" name="Other options (-Xlinker [option])" superClass="gnu.cpp.link.option.other" useByScannerDiscovery="false"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1084196114" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
                                     									
@@ -199,8 +199,7 @@
                             							
                             <tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.364505396" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler">
                                 								
-                                <option id="gnu.both.asm.option.include.paths.929836875" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-								</option>
+                                <option id="gnu.both.asm.option.include.paths.929836875" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.assembler.input.433156659" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
                                 								
@@ -214,15 +213,15 @@
                     					
                     <sourceEntries>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FATFS"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FATFS"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>
                         					
                     </sourceEntries>
                     				
@@ -272,7 +271,7 @@
                             							
                             <option id="fr.ac6.managedbuild.option.gnu.cross.board.2123640739" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board" value="Bootloader" valueType="string"/>
                             							
-                            <option id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core" valueType="stringList">
+                            <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core" valueType="stringList">
                                 								
                                 <listOptionValue builtIn="false" value="ARM Cortex-M7"/>
                                 								
@@ -304,7 +303,7 @@
                                 								
                                 <option id="gnu.c.compiler.option.debugging.level.626872949" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
                                 								
-                                <option id="gnu.c.compiler.option.include.paths.100308733" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.100308733" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="../FATFS/Target"/>
                                     									
@@ -324,7 +323,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="gnu.c.compiler.option.preprocessor.def.symbols.833029658" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.833029658" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
                                     									
                                     <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
                                     									
@@ -332,7 +331,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other.1233064098" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other" value="-fmessage-length=0" valueType="string"/>
+                                <option id="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other.1233064098" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string"/>
                                 								
                                 <inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1512540920" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
                                 								
@@ -346,7 +345,7 @@
                                 								
                                 <option id="gnu.cpp.compiler.option.debugging.level.1491004224" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.debugging.level.max" valueType="enumerated"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.include.paths.610800255" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.610800255" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
                                     									
                                     <listOptionValue builtIn="false" value="../FATFS/Target"/>
                                     									
@@ -366,7 +365,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="gnu.cpp.compiler.option.preprocessor.def.symbols.94965915" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.symbols.94965915" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
                                     									
                                     <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
                                     									
@@ -374,7 +373,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other.1495757598" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other" value="-fmessage-length=0" valueType="string"/>
+                                <option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other.1495757598" name="Other flags" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string"/>
                                 								
                                 <inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1682208201" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
                                 								
@@ -386,13 +385,13 @@
                                 								
                                 <option id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script.1827510994" name="Linker Script (-T)" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script" value="../STM32F746NGHx_FLASH.ld" valueType="string"/>
                                 								
-                                <option id="gnu.c.link.option.libs.289804005" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs"/>
+                                <option id="gnu.c.link.option.libs.289804005" name="Libraries (-l)" superClass="gnu.c.link.option.libs"/>
                                 								
-                                <option id="gnu.c.link.option.paths.880699822" name="Library search path (-L)" superClass="gnu.c.link.option.paths" valueType="libPaths"/>
+                                <option id="gnu.c.link.option.paths.880699822" name="Library search path (-L)" superClass="gnu.c.link.option.paths"/>
                                 								
-                                <option id="gnu.c.link.option.ldflags.157922522" superClass="gnu.c.link.option.ldflags" value="-specs=nosys.specs -specs=nano.specs" valueType="string"/>
+                                <option id="gnu.c.link.option.ldflags.157922522" name="Linker flags" superClass="gnu.c.link.option.ldflags" value="-specs=nosys.specs -specs=nano.specs" valueType="string"/>
                                 								
-                                <option id="gnu.c.link.option.other.410122880" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" useByScannerDiscovery="false" valueType="stringList"/>
+                                <option id="gnu.c.link.option.other.410122880" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" useByScannerDiscovery="false"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.c.linker.input.2080431479" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
                                     									
@@ -408,13 +407,13 @@
                                 								
                                 <option id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.script.1884944842" name="Linker Script (-T)" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.script" value="../STM32F746NGHx_FLASH.ld" valueType="string"/>
                                 								
-                                <option id="gnu.cpp.link.option.libs.1224112005" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs"/>
+                                <option id="gnu.cpp.link.option.libs.1224112005" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs"/>
                                 								
-                                <option id="gnu.cpp.link.option.paths.1440910367" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths"/>
+                                <option id="gnu.cpp.link.option.paths.1440910367" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths"/>
                                 								
                                 <option id="gnu.cpp.link.option.ldflags.351409327" superClass="gnu.cpp.link.option.ldflags" value="-specs=nosys.specs -specs=nano.specs" valueType="string"/>
                                 								
-                                <option id="gnu.cpp.link.option.other.1026650792" name="Other options (-Xlinker [option])" superClass="gnu.cpp.link.option.other" useByScannerDiscovery="false" valueType="stringList"/>
+                                <option id="gnu.cpp.link.option.other.1026650792" name="Other options (-Xlinker [option])" superClass="gnu.cpp.link.option.other" useByScannerDiscovery="false"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1084196114" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
                                     									
@@ -430,8 +429,7 @@
                             							
                             <tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.exe.release.1904388845" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.exe.release">
                                 								
-                                <option id="gnu.both.asm.option.include.paths.929836875" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
-								</option>
+                                <option id="gnu.both.asm.option.include.paths.929836875" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.assembler.input.433156659" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
                                 								
@@ -445,15 +443,15 @@
                     					
                     <sourceEntries>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FATFS"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="FATFS"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
                         						
-                        <entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>
                         					
                     </sourceEntries>
                     				

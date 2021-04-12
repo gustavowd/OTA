@@ -24,10 +24,6 @@
 #include "fatfs.h"
 #include "mbedtls.h"
 
-
-
-
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
