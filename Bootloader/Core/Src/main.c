@@ -81,6 +81,7 @@ int main(void)
   /* USER CODE END Init */
 
   /* Configure the system clock */
+  HAL_RCC_DeInit();
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
