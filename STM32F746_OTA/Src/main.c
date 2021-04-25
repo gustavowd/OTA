@@ -118,11 +118,6 @@ int main(void)
   /* Up to user define the empty MX_MBEDTLS_Init() function located in mbedtls.c file */
   //MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  /* Vou colocar um codigo pronto aqui que faz o teste do cartão sd,
-     * ainda há duvidas sobre o bit wide bus que no exemplo é 4bits e neste projeto está 1bit
-     *
-     */
-
 
   /* USER CODE END 2 */
 

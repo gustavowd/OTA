@@ -32,6 +32,7 @@ volatile int reconnection_trigger = 0;
 // Functions that will be used just internally, in this library
 uint32_t uint8_t2uint32_t(uint8_t * vector);
 void uint32_t2uint8_t(uint8_t * vector, uint32_t data);
+void text2hex(unsigned char * string);
 error_ota_t read_file_info(uint32_t * info, const TCHAR *path);
 error_ota_t write_file_info(uint32_t info, const TCHAR* path);
 error_ota_t sha256sum(const TCHAR* path, unsigned char* saida);
@@ -66,19 +67,36 @@ void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 		data >>= 8;
 	}
 }
+void text2hex(unsigned char * string){//OTIMIZAR
+	int i;
+	unsigned char aux = 0;
+	for(i = 0; i < 64; i++){
+		if((i % 2 == 0) && (i > 0)){
+			string[(i - 2) / 2] = aux;
+		}
+		aux = aux << 4;
+		if((string[i] > 47) && (string[i] < 58)){
+			aux |= (string[i] - 48);
+		}
+		if((string[i] > 96) && (string[i] < 103)){
+			aux |= (string[i] - 87);
+		}
+	}
+	string[(i - 2) / 2] = aux;
+}
 
 error_ota_t read_file_info(uint32_t * info, const TCHAR *path){
 	//variables
 	FRESULT error_fat;
 	error_ota_t error_control = error_ota_none;
 	FIL Arq;
-	uint8_t buffer[4];
+	uint8_t buffer[] = {0, 0, 0, 0};
 	unsigned int BR = 0;
 
 	//read operation
 	error_fat = f_open(&Arq, path, FA_READ);
 	if(error_fat == FR_OK){
-		error_fat = f_read(&Arq, buffer, sizeof(buffer), &BR);
+		error_fat = f_read(&Arq, buffer, f_size(&Arq), &BR);
 		if(error_fat == FR_OK){
 			* info = uint8_t2uint32_t(buffer); // Verificar ponteiros aqui
 		}
@@ -105,7 +123,7 @@ error_ota_t write_file_info(uint32_t info, const TCHAR* path){
 	uint32_t2uint8_t(buffer, info);
 
 	//writing operation
-	error_fat = f_open(&Arq, path, FA_WRITE);
+	error_fat = f_open(&Arq, path, FA_CREATE_ALWAYS | FA_WRITE);
 	if(error_fat == FR_OK){
 		error_fat = f_write(&Arq, buffer, sizeof(buffer), &Bw);
 	}
@@ -114,10 +132,13 @@ error_ota_t write_file_info(uint32_t info, const TCHAR* path){
 	//error control
 	if(error_fat != FR_OK){
 		error_control = error_ota_general;
+#ifdef DEBUG_MODE_OTA
+	UARTPutString("falha na escrita",16);
+	UARTPutString("\n\r>>",4);
+#endif
 	}
 	return (error_control);
 }
-
 
 error_ota_t sha256sum(const TCHAR* path, unsigned char* saida){
 	//Variables
@@ -148,41 +169,36 @@ error_ota_t sha256sum(const TCHAR* path, unsigned char* saida){
 	mbedtls_sha256_free(&Contexto);
 
 	//error control
-#ifdef DEBUG_MODE_OTA
-	UARTPutString("SHA-256 Gerado: ",4);
-	UARTPutString(saida, 32);
-	UARTPutString("\n\r>>",4);
-#endif
 	return(error_control);
 }
 
 error_ota_t integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 	//Variables
 	error_ota_t error_control = error_ota_none;
-	unsigned char Saida_Firmware[32], Saida_Versao[32];
+	unsigned char Saida_Firmware[32], Saida_Versao[64];
 	FIL Versao;
-	unsigned int i, BW;
+	unsigned int BW;
 
 	//Getting SHA-256 from firmware
 	error_control = sha256sum(Firmware_path, Saida_Firmware);//obtem o hash do firmware
 
 	//Getting SHA-256 from file
 	f_open(&Versao, Versao_path, FA_READ);
-	f_read(&Versao, Saida_Versao, 32, &BW);//Obtem o hash do firmware do arquivo do servidor
+	f_read(&Versao, Saida_Versao, 64, &BW);//Obtem o hash do firmware do arquivo do servidor
 	f_close(&Versao);
-
+	text2hex(Saida_Versao);
 	//Comparing hash
-	for(i = 0; i < 32; i++){// só testando depois melhoro
-		if(Saida_Firmware[i] != Saida_Versao[i]){
-			error_control = error_ota_general;
-		}
+	if(strncmp((char *)Saida_Firmware, (char *)Saida_Versao, 32) != 0){
+		error_control = error_ota_general;
 	}
 #ifdef DEBUG_MODE_OTA
 	UARTPutString("Hash de A = ",12);
-	UARTPutString(Saida_Firmware, 32);
+	UARTPutString("\n\r>>",4);
+	UARTPutString((char *)(Saida_Firmware), 32);
 	UARTPutString("\n\r>>",4);
 	UARTPutString("Hash de B = ",12);
-	UARTPutString(Saida_Versao, 32);
+	UARTPutString("\n\r>>",4);
+	UARTPutString((char *)(Saida_Versao), 32);
 	UARTPutString("\n\r>>",4);
 #endif
 
@@ -239,7 +255,7 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 	int i=0;
 	struct hostent *server_addr = NULL;
 	char server_ip_s[16];
-	unsigned long server_ip = *((unsigned long*) server_addr->h_addr);
+	unsigned long server_ip;
 	int len = strlen((char *) Request);
 	FRESULT res;
 	FIL Arquivo;
@@ -270,13 +286,13 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 			vTaskDelay(2000);
 		}
 	} while(server_addr == NULL && retries);
+	server_ip = *((unsigned long*) server_addr->h_addr);
 	if(!retries) {
 		OTA_Error_Handler("Maximo alcancadas\n\r>>");
 		ret = pdTRUE;
 		error_control = error_ota_general;
 		goto deallocate;
 	}
-
    // Convert the IP Address into a string.
    sprintf(server_ip_s, "%d.%d.%d.%d", (int)(server_ip & 0xff), (int)((server_ip >> 8) & 0xff),
 		  (int)((server_ip >> 16) & 0xff), (int)((server_ip >> 24) & 0xff));
@@ -379,35 +395,40 @@ void OTA(void *argument){
 	UARTPutString("\033[2J\033[H", 0);
 
 	// print welcome message
-	UARTPutString("OTA Server iniciou!\n\r>>", 23);
+	UARTPutString("OTA iniciou!\n\r>>", 23);
 
-	printf_install_putchar(UARTPutChar);//isso é o driver uart instalado no freertos?
+	printf_install_putchar(UARTPutChar);
+	vTaskDelay(1000);
 	while(1){
 		xSemaphoreTake(sem_connected, portMAX_DELAY);
 
 		//Get the current version of the firmware from file
 		error_control = read_file_info(&current_version, FIRMWARE_CURRENT_VERSION_PATH);
+		if(error_control == error_ota_general){
+			UARTPutString("Falha na leitura\n\r>>", 20);
+		}
 		//Get the new firmware version file from server
 		UARTPutString("Downloading new firmware version from server...", 47);
-		UARTPutString(" \n\r>>", 4);
-		if(get_file_from_server(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH) == error_ota_none){
+		UARTPutString("\n\r>>", 5);
+		error_control = get_file_from_server(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
+		if(error_control == error_ota_none){
 			//Get the new firmware version from file
 			error_control = read_file_info(&new_version, FIRMWARE_NEW_VERSION_PATH);
-			//Remove files from SD card
-			f_unlink(FIRMWARE_NEW_VERSION_PATH);
 			//show current version on uart
-			UARTPutString("Current firmware version: ", 26);
-			UARTPutString(current_version + 48, 3);
-			UARTPutString(" \n\r>>", 4);
+			//UARTPutString("Current firmware version: ", 26);
+			//UARTPutString((char *)(current_version + 48), 3);
+			//UARTPutString("\n\r>>", 4);
 			//show current version on uart
-			UARTPutString("new firmware version: ", 22);
-			UARTPutString(new_version + 48, 3);
-			UARTPutString(" \n\r>>", 4);
+			//UARTPutString("new firmware version: ", 22);
+			//UARTPutString((char *)(new_version + 48), 3);
+			//UARTPutString("\n\r>>", 4);
 		}
 		else{
 			error_control = error_ota_general;
 			UARTPutString("Error getting version file!", 27);
 			UARTPutString(" \n\r>>", 4);
+			//Remove files from SD card
+			f_unlink(FIRMWARE_NEW_VERSION_PATH);
 		}
 		if((new_version > current_version) && (error_control == error_ota_none)){//compara versão atual e a do servidor
 
@@ -434,6 +455,7 @@ void OTA(void *argument){
 					}
 				}
 				else{
+					f_unlink(FIRMWARE_PATH);
 					UARTPutString("Hash download fail!", 19);
 					UARTPutString(" \n\r>>", 4);
 				}
@@ -443,7 +465,8 @@ void OTA(void *argument){
 				UARTPutString(" \n\r>>", 4);
 			}
 		}
-
+		//Remove files from SD card
+		f_unlink(FIRMWARE_NEW_VERSION_PATH);
 		xSemaphoreGive(sem_connected);
 		vTaskDelay(10000);
 	}

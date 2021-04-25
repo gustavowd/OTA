@@ -38,24 +38,25 @@
 #include "sha256.h"
 /* Public definitions ------------------------------------------------------- */
 // Constants and macros
-#define FIRMWARE_PATH 					"firmware.bin"
-#define FIRMWARE_CURRENT_VERSION_PATH 	"current_version.bin"
-#define FIRMWARE_NEW_VERSION_PATH 		"new_version.bin"
-#define FIRMWARE_NEW_VERSION_HASH_PATH 	"hash.bin"
+#define FIRMWARE_PATH 					"GUSTAVO.PDF"
+#define FIRMWARE_CURRENT_VERSION_PATH 	"O_VER.BIN"
+#define FIRMWARE_NEW_VERSION_PATH 		"N_VER.BIN"
+#define FIRMWARE_NEW_VERSION_HASH_PATH 	"HASH.BIN"
 
-#define AUTH_SERVER 					"192.168.0.121"
+
+#define AUTH_SERVER 					"192.168.0.122"
 #define AUTH_PORT 						443
 #define AUTH_SERVER_LOOKUP_RETRIES 		5
 
-#define AUTH_REQUEST_VERSION 	"GET /" FIRMWARE_NEW_VERSION_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-#define AUTH_REQUEST_FIRMWARE 	"GET /" FIRMWARE_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
-#define AUTH_REQUEST_HASH 		"GET /" FIRMWARE_NEW_VERSION_HASH_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_VERSION 	"GET /files/" FIRMWARE_NEW_VERSION_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_FIRMWARE 	"GET /files/" FIRMWARE_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
+#define AUTH_REQUEST_HASH 		"GET /files/" FIRMWARE_NEW_VERSION_HASH_PATH " HTTP/1.1\r\nHost: " AUTH_SERVER "\r\nUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\r\nAccept: */*\r\nConnection: keep-alive\r\n\r\n"
 
 #define AUTH_REQUEST_BUFFER_SIZE 		512
 #define BUFFER_SIZE 					512
 #define VERSION 						1
 
-//#define DEBUG_MODE_OTA
+#define DEBUG_MODE_OTA
 
 
 /* Public types ------------------------------------------------------------- */
