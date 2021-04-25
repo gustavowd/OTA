@@ -12,10 +12,10 @@
 
 /* Public definitions ------------------------------------------------------- */
 // Constants and macros
-#define FIRMWARE_PATH 							"firmware.bin"
-#define FIRMWARE_CURRENT_VERSION_PATH 			"current_version.txt"
-#define FIRMWARE_INTEGRITY_PATH 				"integrity.txt"
-#define FIRMWARE_NEW_VERSION_PATH 				"new_version.txt"
+#define FIRMWARE_PATH 							"FIRM.BIN"
+#define FIRMWARE_CURRENT_VERSION_PATH 			"O_VER.BIN"
+#define FIRMWARE_INTEGRITY_PATH 				"INT.BIN"
+#define FIRMWARE_NEW_VERSION_PATH 				"N_VER.BIN"
 #define MAX_RETRIES 							300
 #define APP_START_ADDRESS   					0x08008000 //Inicio do setor 1 (FLASH_SECTOR_1)
 #define FLASH_WRITE_SIZE 						0x8U
@@ -23,7 +23,7 @@
 /* Public types ------------------------------------------------------------- */
 // Unions, structs, enumerations and other type definitions
 
-
+#define BOOTLOADER_DEBUG_MODE
 
 typedef enum{
 	error_bootloader_none,
