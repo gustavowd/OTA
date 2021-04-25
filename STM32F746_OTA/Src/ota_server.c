@@ -31,7 +31,6 @@ uint8_t memory_buf[MAX_MEM_SIZE];
 volatile int reconnection_trigger = 0;
 /* Private functions - prototypes ------------------------------------------- */
 // Functions that will be used just internally, in this library
-uint32_t uint8_t2uint32_t(uint8_t * vector);
 void uint32_t2uint8_t(uint8_t * vector, uint32_t data);
 void text2hex(unsigned char * string);
 error_ota_t read_file_info(uint32_t * info, const TCHAR *path);
@@ -52,15 +51,6 @@ void OTA_Error_Handler(char *msg)
   /* USER CODE END Error_Handler_Debug */
 }
 
-uint32_t uint8_t2uint32_t(uint8_t * vector){
-	uint8_t i;
-	uint32_t result = 0;
-	for(i = 0; i < 4; i++){
-		result <<= 8;
-		result |= (uint32_t)vector[i];
-	}
-	return(result);
-}
 void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 	uint8_t i;
 	for(i = 0; i < 4; i++){
@@ -70,13 +60,11 @@ void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 }
 void text2hex(unsigned char * string){
 	int i;
-	int valor;
 	char aux[2];
 	for(i = 0; i < 64; i += 2){
 		aux[0] = string[i];
 		aux[1] = string[i + 1];
-		valor = strtol(aux, NULL, 16);
-		string[i / 2] = valor;
+		string[i / 2] = strtol(aux, NULL, 16);
 	}
 }
 
@@ -93,7 +81,7 @@ error_ota_t read_file_info(uint32_t * info, const TCHAR *path){
 	if(error_fat == FR_OK){
 		error_fat = f_read(&Arq, buffer, f_size(&Arq), &BR);
 		if(error_fat == FR_OK){
-			* info = uint8_t2uint32_t(buffer); // Verificar ponteiros aqui
+			* info  = (uint32_t)atoi(buffer);
 		}
 	}
 	f_close(&Arq);
