@@ -137,11 +137,11 @@ error_ota_t integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 		error_control = error_ota_general;
 	}
 #ifdef DEBUG_MODE_OTA
-	UARTPutString("Hash de A = ",12);
+	UARTPutString("Firmware hash on sd card: ",26);
 	UARTPutString("\n\r>>",4);
 	UARTPutString((char *)(Saida_Firmware), 32);
 	UARTPutString("\n\r>>",4);
-	UARTPutString("Hash de B = ",12);
+	UARTPutString("Hash of the server firmware: ",29);
 	UARTPutString("\n\r>>",4);
 	UARTPutString((char *)(Saida_Versao), 32);
 	UARTPutString("\n\r>>",4);
@@ -149,10 +149,10 @@ error_ota_t integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path){
 
 	//error control
 	if(error_control == error_ota_general){
-		UARTPutString("Falha no teste de integridade\n\r>>", 33);
+		UARTPutString("Integrity check fail!\n\r>>", 25);
 	}
 	else{
-		UARTPutString("Sucesso no teste de integridade\n\r>>", 35);
+		UARTPutString("Integrity check Successful!\n\r>>", 31);
 	}
 	return(error_control);
 }
@@ -215,6 +215,10 @@ error_ota_t write_file_sd(const TCHAR* Path){
 				}
 			}
 			i += 4;
+			itoa(file_size, file_size_buffer, 10);
+			UARTPutString("File size: ", 11);
+			UARTPutString(file_size_buffer, strlen(file_size_buffer));
+			UARTPutString(" bytes\n\r>>", 10);
 			/*-----FIM DO CONSUMO DO CABEÇALHO HTTP------*/
 			//Escreve o restante do buffer no arquivo.
 			res = f_write(&Arquivo, (char *)&buf[i], (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size, &BW);//GRAVA NO ARQUIVO
@@ -248,23 +252,22 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 	//variables
 	error_ota_t error_control = error_ota_none;
 	int retries, ret = pdFALSE;
-	int i=0;
 	struct hostent *server_addr = NULL;
 	char server_ip_s[16];
 	unsigned long server_ip;
 	int len = strlen((char *) Request);
 
 	//Establishing conection
-	UARTPutString("Obtendo conexão com o servidor...\n\r>>", 37);
+	UARTPutString("Connecting to server...\n\r>>", 27);
 	if(tls_client_init(&cli)) {
-		OTA_Error_Handler("Falha na inicializacao do cliente\n\r>>");
+		OTA_Error_Handler("Client initialization fail!\n\r>>");
 		ret = pdFALSE;
 		error_control = error_ota_general;
 		goto exit;
 
 	}
 	if(tls_cert_load(&cli.tls, NULL, SSL_CA_PEM, NULL, NULL)) {
-		OTA_Error_Handler("Falha no Certificado\n\r>>");
+		OTA_Error_Handler("Certification fail!\n\r>>");
 		ret = pdFALSE;
 		error_control = error_ota_general;
 		goto deallocate;
@@ -273,14 +276,14 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 	do {
 		server_addr = gethostbyname(AUTH_SERVER);
 		if(server_addr == NULL) {
-			OTA_Error_Handler("Falha em obter o host\n\r>>");
+			OTA_Error_Handler("Host fail!\n\r>>");
 			retries--;
 			vTaskDelay(2000);
 		}
 	} while(server_addr == NULL && retries);
 	server_ip = *((unsigned long*) server_addr->h_addr);
 	if(!retries) {
-		OTA_Error_Handler("Maximo alcancadas\n\r>>");
+		OTA_Error_Handler("Max retries\n\r>>");
 		ret = pdTRUE;
 		error_control = error_ota_general;
 		goto deallocate;
@@ -290,33 +293,33 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 		  (int)((server_ip >> 16) & 0xff), (int)((server_ip >> 24) & 0xff));
    ret = tls_client_connect(&cli, server_ip_s, AUTH_PORT);
 	if(ret) {
-		OTA_Error_Handler("Falha na conexao TLS\n\r>>");
+		OTA_Error_Handler("TLS conection fail!\n\r>>");
 		ret = pdFALSE;
 		error_control = error_ota_general;
 		goto deallocate;
 	}
 
-	UARTPutString("Conexão Estabelecida...\n\r>>",27);
+	UARTPutString("Connection established!\n\r>>",27);
 	if(http_send_request(&cli.con, Request, len) < 0) {
-		OTA_Error_Handler("Falha na requisicao\n\r>>");
+		OTA_Error_Handler("Requisition fail!\n\r>>");
 		ret = pdFALSE;
 		error_control = error_ota_general;
 		goto deallocate;
 	}
 
-	UARTPutString("Baixando arquivo...\n\r>>",sizeof("Baixando arquivo...\n\r>>"));
+	UARTPutString("Downloading file...\n\r>>",sizeof("Downloading file...\n\r>>"));
 	while(http_get_response(&cli.con, buf, sizeof(buf))) {
 		//Rotina de armazenamento do buffer no arquivo.
 		error_control = write_file_sd(Path);
 		if(error_control != error_ota_none){
-			OTA_Error_Handler("Falha na gravação do arquivo!\n\r>>");
+			OTA_Error_Handler("Saving file error!\n\r>>");
 			f_unlink(Path);
 			goto deallocate;
 		}
 	}
 	//error_control
 	if(error_control == error_ota_none){
-		OTA_Error_Handler("Arquivo obtido com sucesso!\n\r>>");
+		OTA_Error_Handler("Successful download!	\n\r>>");
 	}
 deallocate:
 	tls_connection_free(&cli.con);
@@ -335,6 +338,7 @@ void OTA(void *argument){
 	error_ota_t error_control = error_ota_general;
 	uint32_t current_version;
 	uint32_t new_version;
+	char buf_version[10];
 	/*
 	* 0. Initialize the RNG and the session data
 	*/
@@ -351,49 +355,53 @@ void OTA(void *argument){
 	UARTPutString("\033[2J\033[H", 0);
 
 	// print welcome message
-	UARTPutString("OTA iniciou!\n\r>>", 23);
+	UARTPutString("Started OTA!\n\r>>", 16);
 
 	printf_install_putchar(UARTPutChar);
 	//Aguarda a inicialização do fatfs
 	vTaskDelay(1000);
 	while(1){
 		xSemaphoreTake(sem_connected, portMAX_DELAY);
-
+		UARTPutString("\n\n\n\r>>", 6);
+		UARTPutString("Looking for new firmware...", 27);
+		UARTPutString("\n\r>>", 4);
 		//Get the current version of the firmware from file
 		error_control = read_file_info(&current_version, FIRMWARE_CURRENT_VERSION_PATH);
 		if(error_control == error_ota_general){
-			UARTPutString("Falha na leitura\n\r>>", 20);
+			UARTPutString("Reading file error!\n\r>>", 23);
 		}
 		//Get the new firmware version file from server
 		UARTPutString("Downloading new firmware version from server...", 47);
-		UARTPutString("\n\r>>", 5);
+		UARTPutString("\n\r>>", 4);
 		error_control = get_file_from_server(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
 		if(error_control == error_ota_none){
 			//Get the new firmware version from file
 			error_control = read_file_info(&new_version, FIRMWARE_NEW_VERSION_PATH);
 			//show current version on uart
-			//UARTPutString("Current firmware version: ", 26);
-			//UARTPutString((char *)(current_version + 48), 3);
-			//UARTPutString("\n\r>>", 4);
+			itoa(current_version, buf_version, 10);
+			UARTPutString("Current firmware version: ", 26);
+			UARTPutString(buf_version, strlen(buf_version));
+			UARTPutString("\n\r>>", 4);
 			//show current version on uart
-			//UARTPutString("new firmware version: ", 22);
-			//UARTPutString((char *)(new_version + 48), 3);
-			//UARTPutString("\n\r>>", 4);
+			itoa(new_version, buf_version, 10);
+			UARTPutString("New firmware version: ", 22);
+			UARTPutString(buf_version, strlen(buf_version));
+			UARTPutString("\n\r>>", 4);
 		}
 		else{
 			error_control = error_ota_general;
 			UARTPutString("Error getting version file!", 27);
-			UARTPutString(" \n\r>>", 4);
+			UARTPutString("\n\r>>", 4);
 			//Remove files from SD card
 			f_unlink(FIRMWARE_NEW_VERSION_PATH);
 		}
 		if((new_version > current_version) && (error_control == error_ota_none)){//compara versão atual e a do servidor
 
 			UARTPutString("Downloading new firmware...", 27);
-			UARTPutString(" \n\r>>", 4);
+			UARTPutString("\n\r>>", 4);
 			if(get_file_from_server(AUTH_REQUEST_FIRMWARE, FIRMWARE_PATH) == error_ota_none){//obtem o firmware
 				UARTPutString("Downloading SHA-256 file...", 27);
-				UARTPutString(" \n\r>>", 4);
+				UARTPutString("\n\r>>", 4);
 				if(get_file_from_server(AUTH_REQUEST_HASH,FIRMWARE_NEW_VERSION_HASH_PATH) == error_ota_none){//obtem arquivo contendo o hash
 
 					UARTPutString("Checking integrity of firmware on SD card...", 44);
@@ -401,12 +409,12 @@ void OTA(void *argument){
 					if(integrity(FIRMWARE_PATH, FIRMWARE_NEW_VERSION_HASH_PATH) == error_ota_none){//verifica integridade
 						f_unlink(FIRMWARE_NEW_VERSION_HASH_PATH);
 						UARTPutString("Restarting to Bootloader...",27);
-						UARTPutString(" \n\r>>", 4);
+						UARTPutString("\n\r>>", 4);
 						Reset_Handler(); //Pode ser que isso faça o programa só reiniciar, não ir ao bootloader
 					}
 					else{
 						UARTPutString("Atualization fail!",18);
-						UARTPutString(" \n\r>>", 4);
+						UARTPutString("\n\r>>", 4);
 						f_unlink(FIRMWARE_PATH);
 						f_unlink(FIRMWARE_NEW_VERSION_HASH_PATH);
 					}
@@ -414,12 +422,12 @@ void OTA(void *argument){
 				else{
 					f_unlink(FIRMWARE_PATH);
 					UARTPutString("Hash download fail!", 19);
-					UARTPutString(" \n\r>>", 4);
+					UARTPutString("\n\r>>", 4);
 				}
 			}
 			else{
 				UARTPutString("Firmware download fail!", 23);
-				UARTPutString(" \n\r>>", 4);
+				UARTPutString("\n\r>>", 4);
 			}
 		}
 		//Remove files from SD card
