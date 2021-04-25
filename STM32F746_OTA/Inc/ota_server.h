@@ -38,7 +38,7 @@
 #include "sha256.h"
 /* Public definitions ------------------------------------------------------- */
 // Constants and macros
-#define FIRMWARE_PATH 					"GUSTAVO.PDF"
+#define FIRMWARE_PATH 					"FIRM.BIN"
 #define FIRMWARE_CURRENT_VERSION_PATH 	"O_VER.BIN"
 #define FIRMWARE_NEW_VERSION_PATH 		"N_VER.BIN"
 #define FIRMWARE_NEW_VERSION_HASH_PATH 	"HASH.BIN"

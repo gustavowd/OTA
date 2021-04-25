@@ -21,6 +21,7 @@
 struct tls_client cli;
 static uint8_t buf[BUFFER_SIZE];
 SemaphoreHandle_t sem_connected = NULL;
+unsigned long file_size = 0;
 
 /* use static allocation to keep the heap size as low as possible */
 #ifdef MBEDTLS_MEMORY_BUFFER_ALLOC_C
@@ -244,7 +245,52 @@ int http_get_response(struct tls_connection *con, unsigned char *resp, size_t re
 	return ret;
 }
 
+error_ota_t write_file_sd(const TCHAR* Path){
+	//Variables
+	error_ota_t error_control = error_ota_none;
+	unsigned long i, j;
+	FRESULT res;
+	FIL Arquivo;
+	unsigned int BW = 0;
+	char file_size_buffer[] = {0,0,0,0,0,0,0,0,0,0};
 
+	//Abrindo arquivo
+	res = f_open(&Arquivo, Path, (file_size == 0)? FA_CREATE_ALWAYS | FA_WRITE : FA_OPEN_APPEND | FA_WRITE);
+
+	if(res == FR_OK){
+		/*-----CONSOME CABEÇALHO HTTP------*/
+		if(file_size == 0){//Entra somente na primeira vez para obter o tamanho do arquivo
+			for (i = 0;
+				((strncmp((char *)&buf[i], "\r\n\r\n", 4) != 0) && (i < BUFFER_SIZE));
+				i++)
+			{
+				if((strncmp((char *)&buf[i], "Content-Length:", 15) == 0) && (file_size == 0)){
+					for (j = i + 16; strncmp((char *)&buf[j], "\r\n", 2) != 0 ;j++);
+					strncpy(file_size_buffer, (char *)&buf[i + 16], (j - (i + 16)));
+					file_size = atoi(file_size_buffer);
+				}
+			}
+			i += 4;
+			/*-----FIM DO CONSUMO DO CABEÇALHO HTTP------*/
+			//Escreve o restante do buffer no arquivo.
+			res = f_write(&Arquivo, (char *)&buf[i], (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size, &BW);//GRAVA NO ARQUIVO
+			file_size -= (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size;
+		}
+
+
+		else{
+			//Escreve o buffer no arquivo
+			res = f_write(&Arquivo, buf, (file_size > BUFFER_SIZE) ? BUFFER_SIZE : file_size, &BW);//GRAVA NO ARQUIVO
+			file_size -= (file_size > BUFFER_SIZE) ? BUFFER_SIZE : file_size;
+		}
+	}
+	//error control
+	else{
+		error_control = error_ota_general;
+	}
+	f_close(&Arquivo);
+	return(error_control);
+}
 
 
 error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
@@ -257,10 +303,6 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 	char server_ip_s[16];
 	unsigned long server_ip;
 	int len = strlen((char *) Request);
-	FRESULT res;
-	FIL Arquivo;
-	unsigned int BW = 0;
-	int j;
 
 	//Establishing conection
 	UARTPutString("Obtendo conexão com o servidor...\n\r>>", 37);
@@ -313,53 +355,10 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 	}
 
 	UARTPutString("Baixando arquivo...\n\r>>",sizeof("Baixando arquivo...\n\r>>"));
-	res = f_open(&Arquivo, Path, FA_CREATE_ALWAYS | FA_WRITE);//ABRE ARQUIVO
-	if(res == FR_OK){
-		//UARTPutString("iniciou a transmissao\n\r>>",sizeof("iniciou a transmissao\n\r>>"));
-		while(http_get_response(&cli.con, buf, sizeof(buf))) {//OBTEM UM OS DADOS
-
-			/*-----TIRANDO CABEÇALHO HTTP------*/
-			if(BW == 0){//BW só vai ser 0 quando for a primeira vez q ele entrar aqui, ou quando houver alguma falha
-				for (i = 0;
-				!((buf[i] == '\r') && (buf[i + 1] == '\n') && (buf[i + 2] == '\r') && (buf[i + 3] == '\n'));
-				i++);
-				i += 4;
-				for (j = 0; (j + i) < BUFFER_SIZE; j++){
-						buf[j] = buf[j + i];
-					}
-				if(buf[BUFFER_SIZE - 1] != '\0'){//Verifica se o arquivo é menor que o buffer
-					res = f_write(&Arquivo, buf, BUFFER_SIZE - i, &BW);
-					if(res != FR_OK)
-						error_control = error_ota_general;
-				}
-				else{
-					for (j = 0; buf[j] != '\0'; j++);
-					f_write(&Arquivo, buf, j, &BW);
-				}
-			}
-			/*-----FIM TIRANDO CABEÇALHO HTTP------*/
-
-			else{
-				if(buf[BUFFER_SIZE - 1] != '\0'){
-					res = f_write(&Arquivo, buf, sizeof(buf), &BW);//GRAVA NO ARQUIVO
-					if(res != FR_OK)
-						error_control = error_ota_general;
-				}
-				else{
-					for (j = 0; buf[j] != '\0'; j++);//achar uma função que acha o fim do arquivo pra isso ficar mais rapido
-					f_write(&Arquivo, buf, j, &BW);
-				}
-			}
-		}
-		res = f_close(&Arquivo);
-		if(res != FR_OK){
-			error_control = error_ota_general;
-		}
+	while(http_get_response(&cli.con, buf, sizeof(buf))) {
+		//Rotina de armazenamento do buffer no arquivo.
+		error_control = write_file_sd(Path);
 	}
-	else {
-		error_control = error_ota_general;
-	}
-
 	//error_control
 	if(error_control == error_ota_none){
 		UARTPutString("Arquivo obtido com sucesso!\n\r>>",31);
@@ -368,6 +367,8 @@ deallocate:
 	tls_connection_free(&cli.con);
 	tls_context_free(&cli.tls);
 exit:
+	//Garante que o file_size seja zerado para as proximas operações.
+	file_size = 0;
 	return (error_control);
 }
 
