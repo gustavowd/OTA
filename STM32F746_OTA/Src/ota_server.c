@@ -31,10 +31,8 @@ uint8_t memory_buf[MAX_MEM_SIZE];
 volatile int reconnection_trigger = 0;
 /* Private functions - prototypes ------------------------------------------- */
 // Functions that will be used just internally, in this library
-void uint32_t2uint8_t(uint8_t * vector, uint32_t data);
 void text2hex(unsigned char * string);
 error_ota_t read_file_info(uint32_t * info, const TCHAR *path);
-error_ota_t write_file_info(uint32_t info, const TCHAR* path);
 error_ota_t sha256sum(const TCHAR* path, unsigned char* saida);
 error_ota_t integrity(const TCHAR* Firmware_path, const TCHAR* Versao_path);
 int http_send_request(struct tls_connection *con, char *req, size_t req_size);
@@ -51,13 +49,6 @@ void OTA_Error_Handler(char *msg)
   /* USER CODE END Error_Handler_Debug */
 }
 
-void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
-	uint8_t i;
-	for(i = 0; i < 4; i++){
-		vector[i] = (uint8_t)(data & 0x000000FF);
-		data >>= 8;
-	}
-}
 void text2hex(unsigned char * string){
 	int i;
 	char aux[2];
@@ -90,35 +81,6 @@ error_ota_t read_file_info(uint32_t * info, const TCHAR *path){
 	if(error_fat != FR_OK){
 		error_control = error_ota_general;
 		* info = 0;
-	}
-	return (error_control);
-}
-
-error_ota_t write_file_info(uint32_t info, const TCHAR* path){
-	//variables
-	FRESULT error_fat;
-	error_ota_t error_control = error_ota_none;
-	FIL Arq;
-	uint8_t buffer[4];
-	unsigned int Bw = 0;
-
-	//starting buffer
-	uint32_t2uint8_t(buffer, info);
-
-	//writing operation
-	error_fat = f_open(&Arq, path, FA_CREATE_ALWAYS | FA_WRITE);
-	if(error_fat == FR_OK){
-		error_fat = f_write(&Arq, buffer, sizeof(buffer), &Bw);
-	}
-	f_close(&Arq);
-
-	//error control
-	if(error_fat != FR_OK){
-		error_control = error_ota_general;
-#ifdef DEBUG_MODE_OTA
-	UARTPutString("falha na escrita",16);
-	UARTPutString("\n\r>>",4);
-#endif
 	}
 	return (error_control);
 }
