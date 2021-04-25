@@ -364,9 +364,9 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
 	unsigned int size = 0;
-	UARTPutString("FatFS Iniciado\n\r>>",18);
+	UARTPutString("FatFS started\n\r>>",17);
 	if(FATFS_LinkDriver(&SD_Driver, SD_Path)!=0)
-		UARTPutString("falha link\n\r\n\r>>",21);
+		UARTPutString("Link fail!\n\r>>",14);
 	/* Terceiro argumento igual a 1 pede para montar agora o sistema de arquivos */
 	//UARTPutString("Fazendo o mount\n\r\n\r>>",21);
 	FRESULT res = f_mount(&SDFatFS, SDPath, 1);
