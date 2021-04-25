@@ -274,6 +274,9 @@ error_ota_t write_file_sd(const TCHAR* Path){
 			/*-----FIM DO CONSUMO DO CABEÇALHO HTTP------*/
 			//Escreve o restante do buffer no arquivo.
 			res = f_write(&Arquivo, (char *)&buf[i], (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size, &BW);//GRAVA NO ARQUIVO
+			if(res =! FR_OK){
+				error_control = error_ota_general;
+			}
 			file_size -= (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size;
 		}
 
@@ -281,6 +284,9 @@ error_ota_t write_file_sd(const TCHAR* Path){
 		else{
 			//Escreve o buffer no arquivo
 			res = f_write(&Arquivo, buf, (file_size > BUFFER_SIZE) ? BUFFER_SIZE : file_size, &BW);//GRAVA NO ARQUIVO
+			if(res =! FR_OK){
+				error_control = error_ota_general;
+			}
 			file_size -= (file_size > BUFFER_SIZE) ? BUFFER_SIZE : file_size;
 		}
 	}
@@ -358,10 +364,15 @@ error_ota_t get_file_from_server(char *Request, const TCHAR* Path)
 	while(http_get_response(&cli.con, buf, sizeof(buf))) {
 		//Rotina de armazenamento do buffer no arquivo.
 		error_control = write_file_sd(Path);
+		if(error_control != error_ota_none){
+			OTA_Error_Handler("Falha na gravação do arquivo!\n\r>>");
+			f_unlink(Path);
+			goto deallocate;
+		}
 	}
 	//error_control
 	if(error_control == error_ota_none){
-		UARTPutString("Arquivo obtido com sucesso!\n\r>>",31);
+		OTA_Error_Handler("Arquivo obtido com sucesso!\n\r>>");
 	}
 deallocate:
 	tls_connection_free(&cli.con);
@@ -399,6 +410,7 @@ void OTA(void *argument){
 	UARTPutString("OTA iniciou!\n\r>>", 23);
 
 	printf_install_putchar(UARTPutChar);
+	//Aguarda a inicialização do fatfs
 	vTaskDelay(1000);
 	while(1){
 		xSemaphoreTake(sem_connected, portMAX_DELAY);
