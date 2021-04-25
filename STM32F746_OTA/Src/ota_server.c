@@ -68,22 +68,16 @@ void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 		data >>= 8;
 	}
 }
-void text2hex(unsigned char * string){//OTIMIZAR
+void text2hex(unsigned char * string){
 	int i;
-	unsigned char aux = 0;
-	for(i = 0; i < 64; i++){
-		if((i % 2 == 0) && (i > 0)){
-			string[(i - 2) / 2] = aux;
-		}
-		aux = aux << 4;
-		if((string[i] > 47) && (string[i] < 58)){
-			aux |= (string[i] - 48);
-		}
-		if((string[i] > 96) && (string[i] < 103)){
-			aux |= (string[i] - 87);
-		}
+	int valor;
+	char aux[2];
+	for(i = 0; i < 64; i += 2){
+		aux[0] = string[i];
+		aux[1] = string[i + 1];
+		valor = strtol(aux, NULL, 16);
+		string[i / 2] = valor;
 	}
-	string[(i - 2) / 2] = aux;
 }
 
 error_ota_t read_file_info(uint32_t * info, const TCHAR *path){
@@ -274,7 +268,7 @@ error_ota_t write_file_sd(const TCHAR* Path){
 			/*-----FIM DO CONSUMO DO CABEÇALHO HTTP------*/
 			//Escreve o restante do buffer no arquivo.
 			res = f_write(&Arquivo, (char *)&buf[i], (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size, &BW);//GRAVA NO ARQUIVO
-			if(res =! FR_OK){
+			if(res != FR_OK){
 				error_control = error_ota_general;
 			}
 			file_size -= (file_size > (BUFFER_SIZE - i)) ? (BUFFER_SIZE - i) : file_size;
@@ -284,7 +278,7 @@ error_ota_t write_file_sd(const TCHAR* Path){
 		else{
 			//Escreve o buffer no arquivo
 			res = f_write(&Arquivo, buf, (file_size > BUFFER_SIZE) ? BUFFER_SIZE : file_size, &BW);//GRAVA NO ARQUIVO
-			if(res =! FR_OK){
+			if(res != FR_OK){
 				error_control = error_ota_general;
 			}
 			file_size -= (file_size > BUFFER_SIZE) ? BUFFER_SIZE : file_size;
