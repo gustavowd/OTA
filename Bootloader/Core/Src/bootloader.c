@@ -72,7 +72,7 @@ error_bootloader_t read_file_info(uint32_t * info, const TCHAR *path){
 	//read operation
 	error_fat = f_open(&Arq, path, FA_READ);
 	if(error_fat == FR_OK){
-		error_fat = f_read(&Arq, buffer, f_size(&Arq), &BR);
+		error_fat = f_read(&Arq, buffer, sizeof(buffer), &BR);
 		if(error_fat == FR_OK){
 			* info = uint8_t2uint32_t(buffer); // Verificar ponteiros aqui
 		}
@@ -99,7 +99,7 @@ error_bootloader_t write_file_info(uint32_t info, const TCHAR* path){
 	uint32_t2uint8_t(buffer, info);
 
 	//writing operation
-	error_fat = f_open(&Arq, path, FA_WRITE | FA_CREATE_ALWAYS);
+	error_fat = f_open(&Arq, path, FA_WRITE);
 	if(error_fat == FR_OK){
 		error_fat = f_write(&Arq, buffer, sizeof(buffer), &Bw);
 	}
@@ -209,27 +209,20 @@ void bootloader(){
 	uint32_t fw_current_version = 0;
 	uint32_t fw_new_version = 0;
 	uint32_t fw_integrity = 0;
+#if 1
 	//get firmware integrity info
-	if(read_file_info(&fw_integrity, (const TCHAR*)FIRMWARE_INTEGRITY_PATH) == error_bootloader_none){
-		goto UPDATE_SEQUENCE;
-	}
+	read_file_info(&fw_integrity, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
 
 	//get current firmware info
-	if(read_file_info(&fw_current_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH) == error_bootloader_general){
-		goto JUMP_TO_APPLICATION;
-	}
+	read_file_info(&fw_current_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH);
 
 	//get new firmware info
-	if(read_file_info(&fw_new_version, (const TCHAR*)FIRMWARE_NEW_VERSION_PATH) == error_bootloader_general){
-		goto JUMP_TO_APPLICATION;
-	}
+	read_file_info(&fw_new_version, (const TCHAR*)FIRMWARE_NEW_VERSION_PATH);
 
 	//control sequential
-	if((fw_new_version > fw_current_version)){
-UPDATE_SEQUENCE:
-		if(write_file_info(error_bootloader_app_not_valid, (const TCHAR*)FIRMWARE_INTEGRITY_PATH) == error_bootloader_general){
-			goto JUMP_TO_APPLICATION;
-		}
+	if((fw_new_version > fw_current_version) || (fw_integrity !=  error_bootloader_none)){
+
+		write_file_info(error_bootloader_app_not_valid, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
 		if(flash_erase() != error_bootloader_none){
 			Error_Handler();
 		}
@@ -237,16 +230,12 @@ UPDATE_SEQUENCE:
 		if(flash_program() != error_bootloader_none){
 			Error_Handler();
 		}
-		f_unlink(FIRMWARE_INTEGRITY_PATH);
-#ifndef BOOTLOADER_DEBUG_MODE
+		write_file_info(error_bootloader_none, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
 		write_file_info(fw_new_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH);
-#endif
 	}
-#ifndef BOOTLOADER_DEBUG_MODE
 	f_unlink(FIRMWARE_PATH);
-#endif
 	//jump to application
-JUMP_TO_APPLICATION:
+#endif
 	//MX_GPIO_Deinit(); //Puts GPIOs in default state
 	SysTick->CTRL = 0x0; //Disables SysTick timer and its related interrupt
 	HAL_DeInit();
