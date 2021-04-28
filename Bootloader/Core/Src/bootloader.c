@@ -22,8 +22,6 @@
 
 /* Private functions - prototypes ------------------------------------------- */
 // Functions that will be used just internally, in this library
-uint64_t uint8_t2uint64_t(uint8_t * vector);
-uint32_t uint8_t2uint32_t(uint8_t * vector);
 void uint32_t2uint8_t(uint8_t * vector, uint32_t data);
 error_bootloader_t read_file_info(uint32_t * version, const TCHAR *path);
 error_bootloader_t write_file_info(uint32_t version, const TCHAR* path);
@@ -32,24 +30,6 @@ error_bootloader_t flash_program();
 /* Private functions - implementation --------------------------------------- */
 // Functions that will be used just internally, in this library
 
-uint64_t uint8_t2uint64_t(uint8_t * vector){
-	uint8_t i;
-	uint64_t result = 0;
-	for(i = 0; i < 8; i++){
-		result <<= 8;
-		result |= (uint64_t)vector[i];
-	}
-	return(result);
-}
-uint32_t uint8_t2uint32_t(uint8_t * vector){
-	uint8_t i;
-	uint32_t result = 0;
-	for(i = 0; i < 4; i++){
-		result <<= 8;
-		result |= (uint32_t)vector[i];
-	}
-	return(result);
-}
 void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 	uint8_t i;
 	for(i = 0; i < 4; i++){
@@ -57,9 +37,6 @@ void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 		data >>= 8;
 	}
 }
-
-
-
 
 error_bootloader_t read_file_info(uint32_t * info, const TCHAR *path){
 	//variables
@@ -201,7 +178,6 @@ error_bootloader_t flash_program(){
 
 
 void bootloader(){
-	error_bootloader_t error_control;
 	uint32_t fw_current_version = 0;
 	uint32_t fw_new_version = 0;
 	uint32_t fw_integrity = 0;
@@ -253,7 +229,7 @@ void bootloader(){
 	 __DSB(); //ARM says to use a DSB instruction just after relocating VTOR */
 	/* We are now ready to jump to the main firmware */
 	uint32_t JumpAddress = *((volatile uint32_t*) (APP_START_ADDRESS + 4));
-	void (*Reset_Handler)(void) = (void*)JumpAddress;
-	Reset_Handler(); //We start the execution from he Reset_Handler of the main firmware
+	void (*reset_handler)(void) = (void*)JumpAddress;
+	reset_handler(); //We start the execution from he Reset_Handler of the main firmware
 
 }

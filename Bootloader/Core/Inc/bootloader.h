@@ -18,17 +18,12 @@
 #define FIRMWARE_NEW_VERSION_PATH 				"N_VER.BIN"
 #define MAX_RETRIES 							300
 #define APP_START_ADDRESS   					0x08008000 //Inicio do setor 1 (FLASH_SECTOR_1)
-
-// #define FLASH_TYPEPROGRAM_BYTE        ((uint32_t)0x00U)  /*!< Program byte (8-bit) at a specified address           */
-// #define FLASH_TYPEPROGRAM_HALFWORD    ((uint32_t)0x01U)  /*!< Program a half-word (16-bit) at a specified address   */
-// #define FLASH_TYPEPROGRAM_WORD        ((uint32_t)0x02U)  /*!< Program a word (32-bit) at a specified address        */
-// #define FLASH_TYPEPROGRAM_DOUBLEWORD  ((uint32_t)0x03U)  /*!< Program a double word (64-bit) at a specified address */
 #define FLASH_TYPEPROGRAM						FLASH_TYPEPROGRAM_BYTE
 /* Public types ------------------------------------------------------------- */
 // Unions, structs, enumerations and other type definitions
 
 #define BOOTLOADER_DEBUG_MODE
-
+#define PROTECT_SECTION_0
 typedef enum{
 	error_bootloader_none,
 	error_bootloader_general,
