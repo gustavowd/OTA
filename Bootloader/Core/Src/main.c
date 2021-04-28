@@ -94,7 +94,6 @@ int main(void)
   MX_SDMMC1_MMC_Init();
   //MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  //UARTPutString("FatFS Iniciado\n\r>>",18);
   if(FATFS_LinkDriver(&SD_Driver, SD_Path)==0){
 	  FRESULT res = f_mount(&SDFatFS, SDPath, 1);
 	  if (res == FR_OK){
