@@ -117,9 +117,9 @@ error_bootloader_t write_file_info(uint32_t info, const TCHAR* path){
 error_bootloader_t flash_erase(){
 	error_bootloader_t error_control = error_bootloader_none;
 	FLASH_EraseInitTypeDef erase_data;
-	FLASH_OBProgramInitTypeDef obConfig;
 	uint32_t blocks = 0;
 #ifndef BOOTLOADER_DEBUG_MODE
+	FLASH_OBProgramInitTypeDef obConfig;
 	/* Flash protection */
 	/* Retrieves current OB */
 	HAL_FLASHEx_OBGetConfig(&obConfig);
@@ -143,7 +143,7 @@ error_bootloader_t flash_erase(){
 #ifndef BOOTLOADER_DEBUG_MODE
 	erase_data.NbSectors = 0xFF; //apaga todos os setores menos o primeiro que foi protegido pelo bytes opcionais da flash
 #else
-	erase_data.NbSectors = 0x07;
+	erase_data.NbSectors = 0x07; //Apaga todos os setores menos o primeiro e o ultimo que contem os bytes de debug
 #endif
 	erase_data.TypeErase = FLASH_TYPEERASE_SECTORS;
 	erase_data.VoltageRange = FLASH_VOLTAGE_RANGE_3;
@@ -159,15 +159,9 @@ error_bootloader_t flash_erase(){
 	return(error_control);
 }
 
-
-
-
-
-
 error_bootloader_t flash_program(){
 	//variables
-	uint8_t buffer_read[4];
-	uint64_t buffer_write;
+	uint8_t buffer_read;
 	unsigned int bw = 0;
 	FRESULT error_fat;
 	HAL_StatusTypeDef error_flash = HAL_OK;
@@ -181,11 +175,10 @@ error_bootloader_t flash_program(){
 	if(error_fat == FR_OK){
 		firmware_size = f_size(&firmware_bin);
 		for(addr = APP_START_ADDRESS; addr < (APP_START_ADDRESS + firmware_size) ; addr += bw){
-			error_fat = f_read(&firmware_bin, buffer_read, FLASH_WRITE_SIZE, &bw);
-			buffer_write = uint8_t2uint32_t(buffer_read);
+			error_fat = f_read(&firmware_bin, &buffer_read, 1, &bw);
 			if(error_fat == FR_OK){
 				HAL_FLASH_Unlock(); //Unlocks the flash memory
-				error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, addr, buffer_read[0]); //esse buffer aqui pode dar problema
+				error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, addr, buffer_read); //esse buffer aqui pode dar problema
 				HAL_FLASH_Lock(); //Locks again the flash memory
 				if(error_flash != HAL_OK){
 					error_control = error_bootloader_general;
@@ -195,7 +188,6 @@ error_bootloader_t flash_program(){
 				error_control = error_bootloader_general;
 			}
 		}
-
 	}
 	else{
 		error_control = error_bootloader_general;
@@ -214,17 +206,23 @@ void bootloader(){
 	uint32_t fw_new_version = 0;
 	uint32_t fw_integrity = 0;
 	//get firmware integrity info
-	read_file_info(&fw_integrity, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
+	if(read_file_info(&fw_integrity, (const TCHAR*)FIRMWARE_INTEGRITY_PATH) == error_bootloader_none){
+		goto UPDATE_SEQUENCE;
+	}
 
 	//get current firmware info
-	read_file_info(&fw_current_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH);
+	if(read_file_info(&fw_current_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH) == error_bootloader_general){
+		goto JUMP_TO_APPLICATION;
+	}
 
 	//get new firmware info
-	read_file_info(&fw_new_version, (const TCHAR*)FIRMWARE_NEW_VERSION_PATH);
+	if(read_file_info(&fw_new_version, (const TCHAR*)FIRMWARE_NEW_VERSION_PATH) == error_bootloader_general){
+		goto JUMP_TO_APPLICATION;
+	}
 
 	//control sequential
 	if((fw_new_version > fw_current_version) || (fw_integrity !=  error_bootloader_none)){
-
+		UPDATE_SEQUENCE:
 		write_file_info(error_bootloader_app_not_valid, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
 		if(flash_erase() != error_bootloader_none){
 			Error_Handler();
@@ -233,11 +231,16 @@ void bootloader(){
 		if(flash_program() != error_bootloader_none){
 			Error_Handler();
 		}
-		write_file_info(error_bootloader_none, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
+		f_unlink(FIRMWARE_INTEGRITY_PATH);
+#ifndef BOOTLOADER_DEBUG_MODE
 		write_file_info(fw_new_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH);
+#endif
 	}
-	//f_unlink(FIRMWARE_PATH);
+#ifndef BOOTLOADER_DEBUG_MODE
+	f_unlink(FIRMWARE_PATH);
+#endif
 	//jump to application
+	JUMP_TO_APPLICATION:
 	//MX_GPIO_Deinit(); //Puts GPIOs in default state
 	SysTick->CTRL = 0x0; //Disables SysTick timer and its related interrupt
 	HAL_DeInit();
