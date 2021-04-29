@@ -55,7 +55,7 @@
 #define AUTH_REQUEST_BUFFER_SIZE 		512
 #define BUFFER_SIZE 					512
 #define VERSION 						1
-
+#define BOOTLOADER_START_ADDRESS		0x8000000
 #define DEBUG_MODE_OTA
 
 

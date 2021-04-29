@@ -410,7 +410,20 @@ void OTA(void *argument){
 						f_unlink(FIRMWARE_NEW_VERSION_HASH_PATH);
 						UARTPutString("Restarting to Bootloader...",27);
 						UARTPutString("\n\r>>", 4);
-						Reset_Handler(); //Pode ser que isso faça o programa só reiniciar, não ir ao bootloader
+						//MX_GPIO_Deinit(); //Puts GPIOs in default state
+						SysTick->CTRL = 0x0; //Disables SysTick timer and its related interrupt
+						HAL_DeInit();
+
+						RCC->CIR = 0x00000000; //Disable all interrupts related to clock
+						__set_MSP(*((volatile uint32_t*) BOOTLOADER_START_ADDRESS)); //Set the MSP
+
+						__DMB(); //ARM says to use a DMB instruction before relocating VTOR */
+						SCB->VTOR = BOOTLOADER_START_ADDRESS; //We relocate vector table to the sector 1
+						 __DSB(); //ARM says to use a DSB instruction just after relocating VTOR */
+						/* We are now ready to jump to the main firmware */
+						uint32_t JumpAddress = *((volatile uint32_t*) (BOOTLOADER_START_ADDRESS + 4));
+						void (*reset_handler)(void) = (void*)JumpAddress;
+						reset_handler(); //We start the execution from he Reset_Handler of the main firmware
 					}
 					else{
 						UARTPutString("Atualization fail!",18);
