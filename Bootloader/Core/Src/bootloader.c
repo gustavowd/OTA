@@ -37,6 +37,15 @@ void uint32_t2uint8_t(uint8_t * vector, uint32_t data){
 		data >>= 8;
 	}
 }
+uint32_t uint8_t2uint32_t_little(uint8_t * vector){
+   int i;
+   uint32_t result = 0;
+   for(i = 3; i >= 0; i--){
+      result <<= 8;
+      result |= (uint32_t)vector[i];
+   }
+   return(result);
+}
 
 error_bootloader_t read_file_info(uint32_t * info, const TCHAR *path){
 	//variables
@@ -155,9 +164,9 @@ error_bootloader_t flash_program(){
 		for(addr = APP_START_ADDRESS; addr < (APP_START_ADDRESS + firmware_size) ; addr += br){
 			error_fat = f_read(&firmware_bin, &buffer_read, BUFFER_SIZE, &br);
 			if(error_fat == FR_OK){
-				for(i = 0; i < br; i++){
+				for(i = 0; i < br; i += 4){
 					HAL_FLASH_Unlock(); //Unlocks the flash memory
-					error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, addr + i, buffer_read[i]); //esse buffer aqui pode dar problema
+					error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, addr + i, uint8_t2uint32_t_little((uint8_t *)&buffer_read[i])); //esse buffer aqui pode dar problema
 					HAL_FLASH_Lock(); //Locks again the flash memory
 				}
 				if(error_flash != HAL_OK){
