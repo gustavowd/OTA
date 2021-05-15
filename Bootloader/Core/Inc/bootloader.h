@@ -17,6 +17,7 @@
 #define FIRMWARE_INTEGRITY_PATH 				"INT.BIN"
 #define FIRMWARE_NEW_VERSION_PATH 				"N_VER.BIN"
 #define MAX_RETRIES 							300
+#define BUFFER_SIZE								512
 #define APP_START_ADDRESS   					0x08008000 //Inicio do setor 1 (FLASH_SECTOR_1)
 #define FLASH_TYPEPROGRAM						FLASH_TYPEPROGRAM_BYTE
 /* Public types ------------------------------------------------------------- */

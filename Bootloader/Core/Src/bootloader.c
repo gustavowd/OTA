@@ -138,8 +138,9 @@ error_bootloader_t flash_erase(){
 
 error_bootloader_t flash_program(){
 	//variables
-	uint8_t buffer_read;
-	unsigned int bw = 0;
+	uint8_t buffer_read[BUFFER_SIZE];
+	unsigned int br = 0;
+	unsigned int i;
 	FRESULT error_fat;
 	HAL_StatusTypeDef error_flash = HAL_OK;
 	error_bootloader_t error_control = error_bootloader_none;
@@ -151,12 +152,14 @@ error_bootloader_t flash_program(){
 	error_fat = f_open(&firmware_bin, FIRMWARE_PATH, FA_READ);
 	if(error_fat == FR_OK){
 		firmware_size = f_size(&firmware_bin);
-		for(addr = APP_START_ADDRESS; addr < (APP_START_ADDRESS + firmware_size) ; addr += bw){
-			error_fat = f_read(&firmware_bin, &buffer_read, 1, &bw);
+		for(addr = APP_START_ADDRESS; addr < (APP_START_ADDRESS + firmware_size) ; addr += br){
+			error_fat = f_read(&firmware_bin, &buffer_read, BUFFER_SIZE, &br);
 			if(error_fat == FR_OK){
-				HAL_FLASH_Unlock(); //Unlocks the flash memory
-				error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, addr, buffer_read); //esse buffer aqui pode dar problema
-				HAL_FLASH_Lock(); //Locks again the flash memory
+				for(i = 0; i < br; i++){
+					HAL_FLASH_Unlock(); //Unlocks the flash memory
+					error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, addr + i, buffer_read[i]); //esse buffer aqui pode dar problema
+					HAL_FLASH_Lock(); //Locks again the flash memory
+				}
 				if(error_flash != HAL_OK){
 					error_control = error_bootloader_general;
 				}
