@@ -69,7 +69,7 @@ static void MX_SDMMC1_MMC_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+unsigned char resultado;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -94,8 +94,12 @@ int main(void)
   MX_SDMMC1_MMC_Init();
   //MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  if(FATFS_LinkDriver(&SD_Driver, SD_Path)==0){
-	  FRESULT res = f_mount(&SDFatFS, SDPath, 1);
+  resultado = FATFS_LinkDriver(&SD_Driver, SD_Path);
+  if(resultado == 0){
+	  FRESULT res = FR_DISK_ERR;
+	  while (res != FR_OK){
+		  res = f_mount(&SDFatFS, SDPath, 1);
+	  }
 	  if (res == FR_OK){
 	  		bootloader();
 	  }
