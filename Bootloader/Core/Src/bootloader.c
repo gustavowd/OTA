@@ -187,31 +187,26 @@ error_bootloader_t flash_program(){
 /* Public functions --------------------------------------------------------- */
 // Implementation of functions that are available to the upper layer
 
-
-
 void bootloader(){
 	uint32_t fw_current_version = 0;
 	uint32_t fw_new_version = 0;
-	uint32_t fw_integrity = 0;
-	//get firmware integrity info
-	if(read_file_info(&fw_integrity, (const TCHAR*)FIRMWARE_INTEGRITY_PATH) == error_bootloader_none){
-		goto UPDATE_SEQUENCE;
-	}
 
-	//get current firmware info
-	if(read_file_info(&fw_current_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH) == error_bootloader_general){
-		goto JUMP_TO_APPLICATION;
-	}
-
-	//get new firmware info
+	fw_current_version = get_version(FIRMWARE_VERSION_ADDRESS);
 	if(read_file_info(&fw_new_version, (const TCHAR*)FIRMWARE_NEW_VERSION_PATH) == error_bootloader_general){
-		goto JUMP_TO_APPLICATION;
+		if(fw_current_version == 0xFFFFFFFF){
+#ifndef BOOTLOADER_DEBUG_MODE
+			Error_Handler();
+#else
+			fw_new_version = 1;
+#endif
+		}
+		else{
+			goto JUMP_TO_APPLICATION;
+		}
 	}
-
 	//control sequential
-	if((fw_new_version > fw_current_version) || (fw_integrity !=  error_bootloader_none)){
+	if((fw_new_version > fw_current_version) || (fw_current_version == 0xFFFFFFFF)){
 		UPDATE_SEQUENCE:
-		write_file_info(error_bootloader_app_not_valid, (const TCHAR*)FIRMWARE_INTEGRITY_PATH);
 		if(flash_erase() != error_bootloader_none){
 			Error_Handler();
 		}
@@ -219,14 +214,24 @@ void bootloader(){
 		if(flash_program() != error_bootloader_none){
 			Error_Handler();
 		}
-		f_unlink(FIRMWARE_INTEGRITY_PATH);
+		HAL_FLASH_Unlock(); //Unlocks the flash memory
 #ifndef BOOTLOADER_DEBUG_MODE
-		write_file_info(fw_new_version, (const TCHAR*)FIRMWARE_CURRENT_VERSION_PATH);
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM, FIRMWARE_VERSION_ADDRESS,fw_new_version);
+#else
+		HAL_FLASH_Program(FLASH_TYPEPROGRAM, FIRMWARE_VERSION_ADDRESS,0);
+#endif
+		HAL_FLASH_Lock(); //Locks again the flash memory
+#ifndef BOOTLOADER_DEBUG_MODE
+		if(get_version(FIRMWARE_VERSION_ADDRESS) != fw_new_version){
+			Error_Handler();
+		}
+		else{
+			f_unlink(FIRMWARE_NEW_VERSION_PATH);
+			f_unlink(FIRMWARE_PATH);
+		}
 #endif
 	}
-#ifndef BOOTLOADER_DEBUG_MODE
-	f_unlink(FIRMWARE_PATH);
-#endif
+
 	//jump to application
 	JUMP_TO_APPLICATION:
 	//MX_GPIO_Deinit(); //Puts GPIOs in default state
