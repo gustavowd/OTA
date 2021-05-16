@@ -336,8 +336,8 @@ exit:
 void OTA(void *argument){
 	//Variables
 	error_ota_t error_control = error_ota_general;
-	uint32_t current_version;
-	uint32_t new_version;
+	uint32_t current_version = 0;
+	uint32_t new_version = 0;
 	char buf_version[10];
 	/*
 	* 0. Initialize the RNG and the session data
@@ -366,11 +366,11 @@ void OTA(void *argument){
 		UARTPutString("Looking for new firmware...", 27);
 		UARTPutString("\n\r>>", 4);
 		//Get the current version of the firmware from file
-		error_control = read_file_info(&current_version, FIRMWARE_CURRENT_VERSION_PATH);
-		if(error_control == error_ota_general){
-			UARTPutString("Reading file error!\n\r>>", 23);
-		}
-		//Get the new firmware version file from server
+		current_version = get_flash_info(FIRMWARE_VERSION_ADDRESS);
+#ifdef DEBUG_MODE_OTA
+		current_version = 0;
+#endif
+
 		UARTPutString("Downloading new firmware version from server...", 47);
 		UARTPutString("\n\r>>", 4);
 		error_control = get_file_from_server(AUTH_REQUEST_VERSION, FIRMWARE_NEW_VERSION_PATH);
