@@ -26,7 +26,7 @@
 /* Public types ------------------------------------------------------------- */
 // Unions, structs, enumerations and other type definitions
 
-#define BOOTLOADER_DEBUG_MODE
+//#define BOOTLOADER_DEBUG_MODE
 #define PROTECT_SECTION_0
 typedef enum{
 	error_bootloader_none,

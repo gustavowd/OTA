@@ -104,7 +104,7 @@ error_bootloader_t flash_erase(){
 	error_bootloader_t error_control = error_bootloader_none;
 	FLASH_EraseInitTypeDef erase_data;
 	uint32_t blocks = 0;
-#ifndef BOOTLOADER_DEBUG_MODE
+#ifndef PROTECT_SECTION_0
 	FLASH_OBProgramInitTypeDef obConfig;
 	/* Flash protection */
 	/* Retrieves current OB */
@@ -126,7 +126,7 @@ error_bootloader_t flash_erase(){
 
 	erase_data.TypeErase = FLASH_TYPEERASE_MASSERASE;
 	erase_data.Sector = FLASH_SECTOR_1;
-#ifndef BOOTLOADER_DEBUG_MODE
+#ifndef PROTECT_SECTION_0
 	erase_data.NbSectors = 0xFF; //apaga todos os setores menos o primeiro que foi protegido pelo bytes opcionais da flash
 #else
 	erase_data.NbSectors = 0x07; //Apaga todos os setores menos o primeiro e o ultimo que contem os bytes de debug
@@ -206,7 +206,6 @@ void bootloader(){
 	}
 	//control sequential
 	if((fw_new_version > fw_current_version) || (fw_current_version == 0xFFFFFFFF)){
-		UPDATE_SEQUENCE:
 		if(flash_erase() != error_bootloader_none){
 			Error_Handler();
 		}
