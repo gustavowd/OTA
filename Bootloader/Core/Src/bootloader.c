@@ -168,9 +168,9 @@ error_bootloader_t flash_program(){
 					HAL_FLASH_Unlock(); //Unlocks the flash memory
 					error_flash = HAL_FLASH_Program(FLASH_TYPEPROGRAM, addr + i, uint8_t2uint32_t_little((uint8_t *)&buffer_read[i])); //esse buffer aqui pode dar problema
 					HAL_FLASH_Lock(); //Locks again the flash memory
-				}
-				if(error_flash != HAL_OK){
-					error_control = error_bootloader_general;
+					if(error_flash != HAL_OK){
+						error_control = error_bootloader_general;
+					}
 				}
 			}
 			else{
