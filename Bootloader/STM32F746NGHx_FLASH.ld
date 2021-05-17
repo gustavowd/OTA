@@ -52,26 +52,17 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
+/* Highest address of the user mode stack */
 _estack = 0x20050000;    /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0x1000;      /* required amount of heap  */
-_Min_Stack_Size = 0x1000; /* required amount of stack */
-
-/*RAM1 (xrw)      : ORIGIN = 0x20003CC8, LENGTH = 0x6024
-RAM2 (xrw)      : ORIGIN = 0x20009CEC, LENGTH = 0x7800
-RAM (xrw)       : ORIGIN = 0x200114EC, LENGTH = 0x3EB14*/
+_Min_Heap_Size = 0x200;      /* required amount of heap  */
+_Min_Stack_Size = 0x400; /* required amount of stack */
 
 /* Specify the memory areas */
 MEMORY
 {
-FLASH (rx)      : ORIGIN = 0x08008000, LENGTH = 992K
-Memory1 (xrw)   : ORIGIN = 0x20000000, LENGTH = 0xA0
-Memory2 (xrw)   : ORIGIN = 0x200000A0, LENGTH = 0xA0
-Memory3 (xrw)   : ORIGIN = 0x20000140, LENGTH = 0x1dc4
-Memory4 (xrw)   : ORIGIN = 0x20001F04, LENGTH = 0x1dc4
-RAM (xrw)       : ORIGIN = 0x20003CC8, LENGTH = 0x4C330
-QSPI (rx)       : ORIGIN = 0x90000000, LENGTH = 16M
-SDRAM (xrw)     : ORIGIN = 0x60400000, LENGTH = 4096K
+RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 320K
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 32K
 }
 
 /* Define output sections */
@@ -193,13 +184,6 @@ SECTIONS
   }
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
-  .RxDecripSection (NOLOAD) : { *(.RxDecripSection) } >Memory1
-  .TxDescripSection (NOLOAD) : { *(.TxDescripSection) } >Memory2
-  .RxBUF (NOLOAD) : { *(.RxBUF) } >Memory3
-  .TxBUF (NOLOAD) : { *(.TxBUF) } >Memory4
-  /*.RamData2 (NOLOAD) : { *(.RamData2) } >RAM2*/
-  .ExtQSPIFlashSection : { *(.ExtQSPIFlashSection) } >QSPI
-  .GUI_NUMBYTES_section 0x60400000 (NOLOAD) : { *(.GUI_NUMBYTES_section) } >SDRAM
 }
 
 
