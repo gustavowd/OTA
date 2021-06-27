@@ -42,9 +42,9 @@
 #define FIRMWARE_VERSION_ADDRESS 0x080BFFFC
 #define get_flash_info(x) (*((const uint32_t *)(x)))
 
-#define FIRMWARE_PATH 					"FIRM.BIN"
-#define FIRMWARE_NEW_VERSION_PATH 		"N_VER.BIN"
-#define FIRMWARE_NEW_VERSION_HASH_PATH 	"HASH.BIN"
+#define FIRMWARE_PATH 					"Firmware.bin"
+#define FIRMWARE_NEW_VERSION_PATH 		"Nova_versao.bin"
+#define FIRMWARE_NEW_VERSION_HASH_PATH 	"Hash.bin"
 
 
 #define AUTH_SERVER 					"192.168.0.122"

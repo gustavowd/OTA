@@ -13,10 +13,10 @@
 /* Public definitions ------------------------------------------------------- */
 // Constants and macros
 #define FIRMWARE_VERSION_ADDRESS				0x80BFFFC
-#define FIRMWARE_PATH 							"FIRM.BIN"
+#define FIRMWARE_PATH 							"Firmware.bin"
 #define FIRMWARE_CURRENT_VERSION_PATH 			"O_VER.BIN"
 #define FIRMWARE_INTEGRITY_PATH 				"INT.BIN"
-#define FIRMWARE_NEW_VERSION_PATH 				"N_VER.BIN"
+#define FIRMWARE_NEW_VERSION_PATH 				"Nova_versao.bin"
 #define MAX_RETRIES 							300
 #define BUFFER_SIZE								512
 #define APP_START_ADDRESS   					0x08008000 //Inicio do setor 1 (FLASH_SECTOR_1)
